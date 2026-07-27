@@ -13,4 +13,171 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  classes   Class[]
+  quizzes  Quiz[]
+  students  Students[]
 }
+
+model Students {
+  id        String   @id @default(uuid())
+
+  teacherId String
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classroomId String
+  classroom   Class @relation(fields: [classroomId], references: [id])
+  teacher   User     @relation(fields: [teacherId], references: [id])
+  analytics StudentAnalytics?
+  attempts  QuizAttempt[]
+  @@index([id])
+}
+
+model StudentAnalytics {
+  id String @id @default(uuid())
+
+  studentId String @unique
+
+  quizzesTaken Int @default(0)
+
+  averageScore Float @default(0)
+
+  highestScore Int @default(0)
+
+  lowestScore Int @default(0)
+
+  totalTimeSpent Int @default(0)
+
+  accuracy Float @default(0)
+
+  student Students @relation(fields: [studentId], references: [id])
+}
+model Class {
+  id        String   @id @default(uuid())
+  teacherId String
+  name      String
+  habitat   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacher   User     @relation(fields: [teacherId], references: [id])
+  students Students[]
+  files     UploadedFile[]
+ 
+  quizzes  Quiz[]
+  classAnalytics ClassAnalytics?
+  @@index([id])
+}
+
+model ClassAnalytics {
+  id String @id @default(uuid())
+
+  classId String @unique
+
+  totalStudents Int
+
+  quizzesCreated Int
+
+  quizzesCompleted Int
+
+  averageScore Float
+
+  class Class @relation(fields: [classId], references: [id])
+}
+model Quiz {
+  id        String   @id @default(uuid())
+  teacherId String
+  classId   String
+  title     String
+  questions Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacher   User     @relation(fields: [teacherId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+  attempts  QuizAttempt[]
+  analytics QuizAnalytics?
+  questionAnalytics QuestionAnalytics[]
+  @@index([id])
+  @@index([teacherId])
+  @@index([classId])
+}
+model QuestionAnalytics {
+  id String @id @default(uuid())
+
+  quizId String
+
+  questionIndex Int
+
+  correctCount Int @default(0)
+
+  wrongCount Int @default(0)
+
+  skippedCount Int @default(0)
+
+  quiz Quiz @relation(fields: [quizId], references: [id])
+
+  @@unique([quizId, questionIndex])
+}
+model QuizAnalytics {
+  id String @id @default(uuid())
+
+  quizId String @unique
+
+  attempts Int @default(0)
+
+  averageScore Float @default(0)
+
+  highestScore Int @default(0)
+
+  lowestScore Int @default(0)
+
+  averageDuration Int @default(0)
+
+  completionRate Float @default(0)
+
+  quiz Quiz @relation(fields: [quizId], references: [id])
+}
+model QuizAttempt {
+  id          String   @id @default(uuid())
+
+  quizId       String
+  studentId    String
+
+  startedAt    DateTime
+  submittedAt  DateTime?
+
+  score        Int
+
+  totalItems   Int
+
+  durationSec  Int
+
+  quiz         Quiz      @relation(fields: [quizId], references: [id])
+  student      Students  @relation(fields: [studentId], references: [id])
+
+  @@index([quizId])
+  @@index([studentId])
+}
+
+
+model UploadedFile {
+  id        String   @id @default(uuid())
+  classId   String
+  fileName  String
+
+  questions Json
+  summary   String?
+
+  pptUrl    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  class     Class    @relation(fields: [classId], references: [id])
+  @@index([id])
+}
+
