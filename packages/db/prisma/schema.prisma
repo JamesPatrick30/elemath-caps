@@ -78,10 +78,24 @@ model Class {
   files     UploadedFile[]
  
   quizzes  Quiz[]
+  lessons  lessons[]
   classAnalytics ClassAnalytics?
   @@index([id])
 }
 
+model lessons{
+  id       String   @id @default(uuid())
+  classId   String
+  title     String
+  pdfUrl    String
+
+  questions Json
+  summary   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  class     Class    @relation(fields: [classId], references: [id])
+}
 model ClassAnalytics {
   id String @id @default(uuid())
 

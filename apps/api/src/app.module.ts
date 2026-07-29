@@ -9,9 +9,19 @@ import { AuthModule } from './auth/auth.module';
 import { SharedService } from './shared/shared.service';
 import { ClassModule } from './class/class.module';
 import { RedisModule } from './redis/redis.module';
+import { BullModule } from '@nestjs/bullmq';
+import { PdfModule } from './pdf/pdf.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal: true,}), PrismaModule, UsersModule, StudentsModule, AuthModule, ClassModule, RedisModule],
+  imports: [BullModule.forRootAsync({
+    useFactory: () => ({
+      connection: {
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        password: process.env.REDIS_PASSWORD || undefined,
+      },
+    }),
+  }),ConfigModule.forRoot({isGlobal: true,}), PrismaModule, UsersModule, StudentsModule, AuthModule, ClassModule, RedisModule, PdfModule],
   controllers: [AppController],
   providers: [AppService, { provide: SharedService, useClass: SharedService }],
 })
