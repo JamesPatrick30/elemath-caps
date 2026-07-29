@@ -66,7 +66,7 @@ export class ClassService {
         return { message: 'Class registered successfully' };
     }
 
-    async updateClass(classId: string, userId: string, updatedData: any): Promise<{ message: string }> {
+    async updateClass(classId: string, userId: string, updatedData: {name?: string, habitat?: string}): Promise<{ message: string }> {
         const classToUpdate = await this.prismaService.client().class.findUnique({
             where: { id: classId },
         });
@@ -84,5 +84,24 @@ export class ClassService {
         await this.cache.del(cacheKey);
 
         return { message: 'Class updated successfully' };
+    }
+
+    async deleteClass(classId: string, userId: string): Promise<{ message: string }> {
+        const classToDelete = await this.prismaService.client().class.findUnique({
+            where: { id: classId },
+        });
+
+        if (!classToDelete) {
+            throw new ConflictException('Class not found');
+        }
+        await this.prismaService.client().class.update({
+            where: { id: classId },
+            data: { isActive: false },
+        });
+
+        const cacheKey = this.keyForUserClasses(userId);
+        await this.cache.del(cacheKey);
+
+        return { message: 'Class deleted successfully' };
     }
 }
