@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { StudentsService } from './students.service';
 import { AccessTeacherGuard } from '../auth/guard/accessTeacher.guard';
@@ -17,6 +17,16 @@ export class StudentsController {
     async registerStudent(@Body() studentData: RegisterStudentDto, @Req() req: Request): Promise<{ message: string }> {
         const classId = studentData.classId;
         return this.studentsService.registerStudent(classId, req.user.sub, studentData.password, studentData.name, studentData.email);
+    }
+
+    @Put(':id')
+    async updateStudent(@Param('id') studentId: string, @Body() updatedData: any, @Req() req: Request): Promise<{ message: string }> {
+        return this.studentsService.updateStudent(studentId, req.user.sub, updatedData);
+    }
+
+    @Delete(':id')
+    async deleteStudent(@Param('id') studentId: string, @Req() req: Request): Promise<{ message: string }> {
+        return this.studentsService.deleteStudent(studentId, req.user.sub);
     }
 
 }

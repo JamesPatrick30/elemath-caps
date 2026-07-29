@@ -11,6 +11,9 @@ model User {
   email     String   @unique
   name      String?
   password  String
+
+  isActive  Boolean  @default(true)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -26,6 +29,9 @@ model Students {
   name      String
   email     String   @unique
   password  String
+
+  isActive  Boolean  @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -61,6 +67,9 @@ model Class {
   teacherId String
   name      String
   habitat   String
+
+  isActive  Boolean  @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

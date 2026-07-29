@@ -22,4 +22,9 @@ export class AuthController {
     async refreshTokens(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
         return this.authService.refreshTokens(res, req.user);
     }
+
+    @Post('logout')
+    async logout(@Res({ passthrough: true }) res: Response) {
+        return this.authService.logout(res);
+    }
 }

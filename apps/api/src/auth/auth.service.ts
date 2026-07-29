@@ -32,6 +32,10 @@ export class AuthService {
             throw new NotFoundException('User not found');
         }
 
+        if (teacher.isActive === false) {
+            throw new NotFoundException('User is not active');
+        }
+
         const isPasswordValid = await this.sharedService.comparePasswords(password, teacher.password);
         if (!isPasswordValid) {
             throw new NotFoundException('Invalid credentials');
