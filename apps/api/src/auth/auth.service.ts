@@ -14,9 +14,9 @@ export class AuthService {
 
     private accessTokenSecret = process.env.ACCESS_JWT_SECRET;
     private refreshTokenSecret = process.env.REFRESH_JWT_SECRET;
-    private cookieNames: Record<string, CookieNames> = {
-        accessToken: 'accessToken',
-        refreshToken: 'refreshToken',
+    private cookieNames = {
+        accessToken: CookieNames.accessToken,
+        refreshToken: CookieNames.refreshToken,
     };
 
     private generateTokens(payload: any): { accessToken: string; refreshToken: string } {

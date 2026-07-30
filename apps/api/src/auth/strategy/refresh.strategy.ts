@@ -1,9 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import type { CookieNames } from '../../types/cookie'
+import { CookieNames } from '../../types/cookie'
 
-const cookieName: CookieNames = 'refreshToken';
+const cookieName = CookieNames.refreshToken;
 
 @Injectable()
 export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
