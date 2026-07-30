@@ -9,7 +9,7 @@ export class PdfService {
 
     async addPdfJob(data: workerQueueDataFile): Promise<void> {
         console.log('Adding PDF job to the queue:', data);
-        await this.pdfQueue.add('generate-pdf', {fileName: data.fileName, classId: data.classId, originalName: data.originalName, path: data.path} as workerQueueDataFile, {
+        await this.pdfQueue.add('generate-pdf', {userId: data.userId, fileName: data.fileName, classId: data.classId, originalName: data.originalName, path: data.path} as workerQueueDataFile, {
             attempts: 3,
             removeOnComplete: 100,
             removeOnFail: 100,
