@@ -4,3 +4,10 @@ export interface workerQueueDataFile {
     originalName: string;
     path: string;
 }
+
+export interface pdfUploadRequest {
+    classId: string;
+}
+export interface workerQueue {
+    PDF: 'pdf';
+}

@@ -4,6 +4,7 @@ import pdfParse from 'pdf-parse';
 import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { workerQueueDataFile } from '@repo/types';
 @Injectable()
 export class PdfService {
     private client: OpenAI;
@@ -16,13 +17,13 @@ export class PdfService {
     }
     private readonly logger = new Logger(PdfService.name);
 
-    async pdfProcessor(data: { data: { path: string; classId: string; originalName: string; } }): Promise<void> {
+    async pdfProcessor(data: workerQueueDataFile): Promise<void> {
         try {
-        this.logger.log(`Reading PDF: ${data.data.path}`);
+        this.logger.log(`Reading PDF: ${data.path}`);
         console.log(data);
         
         // Read the uploaded PDF
-        const buffer = await fs.readFile(data.data.path);
+        const buffer = await fs.readFile(data.path);
 
         // Extract text
         const result = await pdfParse(buffer);
@@ -41,8 +42,8 @@ export class PdfService {
         let openai;
         let summary;
         try{
-            summary = await this.chat(`Summarize the following text: ${result.text}`);
-            openai = await this.chat(`
+            summary = await this.AiSummarizerCall(`Summarize the following text: ${result.text}`);
+            openai = await this.AIQuestionGenerator(`
                 You are an educational assessment generator.
 
                 Generate a multiple-choice quiz from the lesson below.
@@ -70,37 +71,37 @@ export class PdfService {
                 }
 
                 Lesson:
-                ${result.text}
+                ${summary}
             `);
         } catch (error) {
             this.logger.error('Error during AI processing:', error);
         }
         
         this.logger.log('===== AI RESPONSE =====');
-        console.log(JSON.parse(openai));
+        console.log(openai);
         console.log('========================');
         console.log('===== AI SUMMARY =====');
         console.log(summary);
         this.logger.log('========================');
 
-        // await this.prismaService.client().lessons.create({
-        //     data: {
-        //         classId: data.data.classId,
-        //         title: data.data.originalName,
-        //         pdfUrl: data.data.path,
-        //         questions: JSON.parse(openai),
-        //         summary: summary,
-        //     }
-        // });
+        await this.prismaService.client().lessons.create({
+            data: {
+                classId: data.classId,
+                title: data.originalName,
+                pdfUrl: data.path,
+                questions: JSON.parse(openai),
+                summary: summary,
+            }
+        });
         } catch (error) {
         this.logger.error('Failed to process PDF', error);
         throw error;
         }
     }
 
-    async chat(prompt: string) {
+    async AiSummarizerCall(prompt: string) {
         const response = await this.client.chat.completions.create({
-        model: this.configService.get<string>('OPENROUTER_MODEL')!,
+        model: this.configService.get<string>('OPENROUTER_MODEL_SUMMARIZE')!,
         messages: [
             {
             role: 'user',
@@ -110,5 +111,19 @@ export class PdfService {
         });
 
         return response.choices[0].message.content;
+    }
+
+    async AIQuestionGenerator(prompt: string) {
+        const response = await this.client.chat.completions.create({
+        model: this.configService.get<string>('OPENROUTER_MODEL_QUESTION')!,
+        messages: [
+            {
+            role: 'user',
+            content: prompt,
+            },
+        ],
+        });
+        return response.choices[0].message.content;
+    
     }
 }

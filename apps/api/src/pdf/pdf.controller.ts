@@ -10,6 +10,8 @@ import { PdfService } from './pdf.service';
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname } from "path";
+
+import { UploadPdfDto } from './dto/upload.dto';
 @Controller('pdf')
 export class PdfController {
     constructor(private readonly pdfService: PdfService) {}
@@ -30,12 +32,13 @@ export class PdfController {
     )
     async upload(
     @UploadedFile() file: Express.Multer.File,
+    @Body() body: UploadPdfDto
     ) {
     await this.pdfService.addPdfJob({
-        filename: file.filename,
+        fileName: file.filename,
         originalName: file.originalname,
         path: file.path,
-        size: file.size,
+        classId: body.classId,
     });
 
     return {
