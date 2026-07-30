@@ -12,6 +12,7 @@ import { RedisModule } from './redis/redis.module';
 import { BullModule } from '@nestjs/bullmq';
 import { PdfModule } from './pdf/pdf.module';
 import { GameModule } from './game/game.module';
+import { WebsocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [BullModule.forRootAsync({
@@ -22,7 +23,7 @@ import { GameModule } from './game/game.module';
         password: process.env.REDIS_PASSWORD || undefined,
       },
     }),
-  }),ConfigModule.forRoot({isGlobal: true,}), PrismaModule, UsersModule, StudentsModule, AuthModule, ClassModule, RedisModule, PdfModule, GameModule],
+  }),ConfigModule.forRoot({isGlobal: true,}), PrismaModule, UsersModule, StudentsModule, AuthModule, ClassModule, RedisModule, PdfModule, GameModule, WebsocketModule],
   controllers: [AppController],
   providers: [AppService, { provide: SharedService, useClass: SharedService }],
 })

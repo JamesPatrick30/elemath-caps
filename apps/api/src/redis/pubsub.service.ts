@@ -9,7 +9,7 @@ import {
   REDIS_PUBLISHER,
   REDIS_SUBSCRIBER,
 } from './redis.provider';
-
+import { WebsocketService } from '../websocket/websocket.service';
 @Injectable()
 export class RedisPubSubService implements OnModuleInit {
   constructor(
@@ -18,6 +18,8 @@ export class RedisPubSubService implements OnModuleInit {
 
     @Inject(REDIS_SUBSCRIBER)
     private readonly subscriber: Redis,
+
+    private readonly websocketService: WebsocketService,
   ) {}
 
   async onModuleInit() {
@@ -27,8 +29,14 @@ export class RedisPubSubService implements OnModuleInit {
       console.log(`Received on ${channel}:`, message);
 
       const data = JSON.parse(message);
+      switch (channel) {
+        case 'pdf-generated':
+          this.websocketService.emit('pdf-generated', data, data.id);
+          break;
+        default:
+          console.warn(`No handler for channel: ${channel}`);
+      }
 
-      // Handle event
     });
   }
 
