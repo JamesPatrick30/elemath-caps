@@ -5,15 +5,20 @@ import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { workerQueueDataFile } from '@repo/types';
+import {RedisPubSubService} from '../redis/pubsub.service';
 @Injectable()
 export class PdfService {
     private client: OpenAI;
 
-    constructor(private readonly configService: ConfigService, private readonly prismaService: PrismaService) {
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly prismaService: PrismaService,
+        private readonly redisPubSubService: RedisPubSubService,
+    ) {
         this.client = new OpenAI({
-        apiKey: this.configService.get<string>('OPENROUTER_API_KEY'),
-        baseURL: 'https://openrouter.ai/api/v1',
-    });
+            apiKey: this.configService.get<string>('OPENROUTER_API_KEY'),
+            baseURL: 'https://openrouter.ai/api/v1',
+        });
     }
     private readonly logger = new Logger(PdfService.name);
 
@@ -24,7 +29,7 @@ export class PdfService {
         
         // Read the uploaded PDF
         const buffer = await fs.readFile(data.path);
-
+        this.redisPubSubService.publish('pdf-generated', { classId: data.classId, fileName: data.fileName, originalName: data.originalName, path: data.path,message: 'PDF processed successfully' });
         // Extract text
         const result = await pdfParse(buffer);
 
@@ -43,6 +48,9 @@ export class PdfService {
         let summary;
         try{
             summary = await this.AiSummarizerCall(`Summarize the following text: ${result.text}`);
+    
+            this.redisPubSubService.publish('pdf-generated', { classId: data.classId, fileName: data.fileName, originalName: data.originalName, path: data.path,message: 'Generating practice questions...' });
+
             openai = await this.AIQuestionGenerator(`
                 You are an educational assessment generator.
 
@@ -73,6 +81,7 @@ export class PdfService {
                 Lesson:
                 ${summary}
             `);
+
         } catch (error) {
             this.logger.error('Error during AI processing:', error);
         }
@@ -93,6 +102,8 @@ export class PdfService {
                 summary: summary,
             }
         });
+        this.redisPubSubService.publish('pdf-generated', { classId: data.classId, fileName: data.fileName, originalName: data.originalName, path: data.path,message: 'Data saved successfully' });
+
         } catch (error) {
         this.logger.error('Failed to process PDF', error);
         throw error;
