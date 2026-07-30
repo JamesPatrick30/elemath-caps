@@ -10,4 +10,5 @@ export interface pdfUploadRequest {
 }
 export interface workerQueue {
     PDF: 'pdf';
+    GenerateQuestions: 'generate-questions';
 }
