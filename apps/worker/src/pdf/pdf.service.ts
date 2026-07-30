@@ -6,6 +6,8 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { workerQueueDataFile } from '@repo/types';
 import {RedisPubSubService} from '../redis/pubsub.service';
+import type { uploadTask } from '@repo/types';
+import { CacheService } from '../redis/cache.service';
 @Injectable()
 export class PdfService {
     private client: OpenAI;
@@ -14,6 +16,7 @@ export class PdfService {
         private readonly configService: ConfigService,
         private readonly prismaService: PrismaService,
         private readonly redisPubSubService: RedisPubSubService,
+        private readonly cacheService: CacheService
     ) {
         this.client = new OpenAI({
             apiKey: this.configService.get<string>('OPENROUTER_API_KEY'),
@@ -24,63 +27,31 @@ export class PdfService {
 
     async pdfProcessor(data: workerQueueDataFile): Promise<void> {
         try {
-        this.logger.log(`Reading PDF: ${data.path}`);
-        console.log(data);
         
         // Read the uploaded PDF
         const buffer = await fs.readFile(data.path);
-        this.redisPubSubService.publish('pdf-generated', { classId: data.classId, fileName: data.fileName, originalName: data.originalName, path: data.path,message: 'PDF processed successfully' });
+
+        let userSocketId = await this.cacheService.get(`socket:${data.userId}`); 
+        this.redisPubSubService.publish('pdf-generated', { status: 'PDF processed successfully', id: userSocketId } as uploadTask);
         // Extract text
         const result = await pdfParse(buffer);
-
-        this.logger.log('===== PDF TEXT =====');
-        this.logger.log(result.text);
-        this.logger.log('====================');
-
-        // TODO:
-        // - Send result.text to your AI
-        // - Generate quiz questions
-        // - Save them to PostgreSQL
-
-        this.logger.log('===== AI PROCESSING =====');
 
         let openai;
         let summary;
         try{
-            summary = await this.AiSummarizerCall(`Summarize the following text: ${result.text}`);
-    
-            this.redisPubSubService.publish('pdf-generated', { classId: data.classId, fileName: data.fileName, originalName: data.originalName, path: data.path,message: 'Generating practice questions...' });
+            // summary = await this.AiSummarizerCall(`Summarize the following text: ${result.text}`);
+            // delay simulation for testing purposes
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            summary = "This is a simulated summary of the PDF content.";
 
-            openai = await this.AIQuestionGenerator(`
-                You are an educational assessment generator.
 
-                Generate a multiple-choice quiz from the lesson below.
+            userSocketId = await this.cacheService.get(`socket:${data.userId}`);
+            this.redisPubSubService.publish('pdf-generated', { status: 'Generating practice questions...', id: userSocketId }as uploadTask);
 
-                Requirements:
-                - Detect the lesson title.
-                - Detect the subject.
-                - Generate up to 20 questions.
-                - Every question must have exactly 4 choices.
-                - Only one correct answer.
-                - Answers must come directly from the lesson.
-                - Do not hallucinate.
-                - Return ONLY valid JSON.
-
-                {
-                "title": "",
-                "subject": "",
-                "questions": [
-                    {
-                    "question": "",
-                    "choices": [],
-                    "correctAnswer": ""
-                    }
-                ]
-                }
-
-                Lesson:
-                ${summary}
-            `);
+            // 
+            // delay simulation for testing purposes
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            summary = "This is a simulated summary of the PDF content.";
 
         } catch (error) {
             this.logger.error('Error during AI processing:', error);
@@ -93,16 +64,19 @@ export class PdfService {
         console.log(summary);
         this.logger.log('========================');
 
-        await this.prismaService.client().lessons.create({
-            data: {
-                classId: data.classId,
-                title: data.originalName,
-                pdfUrl: data.path,
-                questions: JSON.parse(openai),
-                summary: summary,
-            }
-        });
-        this.redisPubSubService.publish('pdf-generated', { classId: data.classId, fileName: data.fileName, originalName: data.originalName, path: data.path,message: 'Data saved successfully' });
+        // await this.prismaService.client().lessons.create({
+        //     data: {
+        //         classId: data.classId,
+        //         title: data.originalName,
+        //         pdfUrl: data.path,
+        //         questions: JSON.parse(openai),
+        //         summary: summary,
+        //     }
+        // });
+
+        userSocketId = await this.cacheService.get(`socket:${data.userId}`);
+
+        this.redisPubSubService.publish('pdf-generated', { status: 'Data saved successfully', id: userSocketId } as uploadTask);
 
         } catch (error) {
         this.logger.error('Failed to process PDF', error);
