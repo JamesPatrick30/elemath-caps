@@ -1,39 +1,34 @@
-// redis.provider.ts
+import Redis from 'ioredis';
 
-import Redis from "ioredis";
-export const REDIS = "REDIS";
-export const REDIS_PUBLISHER = "REDIS_PUBLISHER";
-export const REDIS_SUBSCRIBER = "REDIS_SUBSCRIBER";
+export const REDIS = 'REDIS';
+export const REDIS_PUBLISHER = 'REDIS_PUBLISHER';
+export const REDIS_SUBSCRIBER = 'REDIS_SUBSCRIBER';
+
+const createRedis = () => {
+  const redis = new Redis(process.env.REDIS_URL || "");
+
+  redis.on('ready', () => {
+    console.log('✅ Redis connected');
+  });
+
+  redis.on('error', (err) => {
+    console.error('❌ Redis Error:', err.message);
+  });
+
+  return redis;
+};
 
 export const RedisProviders = [
   {
     provide: REDIS,
-    useFactory: () => {
-        
-        const redis = new Redis(process.env.REDIS_URL || "");
-
-        redis.on("ready", () => {
-            console.log("✅ Redis ready");
-        });
-
-        redis.on("error", (err) => {
-            console.error("❌ Redis error:", err.message);
-        });
-
-        return redis;
-    
-    },
+    useFactory: createRedis,
   },
   {
     provide: REDIS_PUBLISHER,
-    useFactory: () => {
-      return new Redis(process.env.REDIS_URL || "");
-    },
+    useFactory: createRedis,
   },
   {
     provide: REDIS_SUBSCRIBER,
-    useFactory: () => {
-      return new Redis(process.env.REDIS_URL || "");
-    },
+    useFactory: createRedis,
   },
 ];
