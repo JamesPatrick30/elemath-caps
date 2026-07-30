@@ -11,6 +11,7 @@ import { ClassModule } from './class/class.module';
 import { RedisModule } from './redis/redis.module';
 import { BullModule } from '@nestjs/bullmq';
 import { PdfModule } from './pdf/pdf.module';
+import { GameModule } from './game/game.module';
 
 @Module({
   imports: [BullModule.forRootAsync({
@@ -21,7 +22,7 @@ import { PdfModule } from './pdf/pdf.module';
         password: process.env.REDIS_PASSWORD || undefined,
       },
     }),
-  }),ConfigModule.forRoot({isGlobal: true,}), PrismaModule, UsersModule, StudentsModule, AuthModule, ClassModule, RedisModule, PdfModule],
+  }),ConfigModule.forRoot({isGlobal: true,}), PrismaModule, UsersModule, StudentsModule, AuthModule, ClassModule, RedisModule, PdfModule, GameModule],
   controllers: [AppController],
   providers: [AppService, { provide: SharedService, useClass: SharedService }],
 })

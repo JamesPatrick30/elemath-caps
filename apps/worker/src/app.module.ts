@@ -6,6 +6,7 @@ import { RedisModule } from './redis/redis.module';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PdfModule } from './pdf/pdf.module';
+import { GameModule } from './game/game.module';
 @Module({
   imports: [ ConfigModule.forRoot({ isGlobal: true }), PrismaModule, RedisModule, BullModule.forRootAsync({
     imports: [ConfigModule],
@@ -17,7 +18,7 @@ import { PdfModule } from './pdf/pdf.module';
           password: config.get<string>('REDIS_PASSWORD') || undefined,
       },
     }),
-  }), PdfModule ],
+  }), PdfModule, GameModule ],
   controllers: [AppController],
   providers: [AppService],
 })
