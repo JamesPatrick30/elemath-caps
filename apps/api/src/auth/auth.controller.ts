@@ -1,11 +1,19 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import type { Response, Request } from 'express';
 import { SignInDto } from './dto/signIn.dto';
 import {RefreshGuard} from './guard/refresh.guard';
+import { AccessTeacherGuard } from './guard/accessTeacher.guard';
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) {}
+
+    @Get('teacher/me')
+    @UseGuards(AccessTeacherGuard)
+    async getMe(@Req() req: Request) {
+        console.log('User from request:', req.user); // Log the user object for debugging
+        return req.user;
+    }
 
     @Post('signIn/teacher')
     async teacherLogin(@Body() body: SignInDto, @Res({ passthrough: true }) res: Response) {

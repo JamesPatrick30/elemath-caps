@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@repo/types": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "autoprefixer": "^10.5.4",
+    "axios": "^1.19.0",
     "lucide-react": "^1.25.0",
     "postcss": "^8.5.23",
     "react": "^19.2.7",
