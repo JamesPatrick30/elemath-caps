@@ -13,6 +13,13 @@ async function bootstrap() {
       transform: true,
   }));
 
+  // Enable CORS for the frontend application
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  });
+
+  
   // Graceful shutdown hooks
   app.enableShutdownHooks();
 
