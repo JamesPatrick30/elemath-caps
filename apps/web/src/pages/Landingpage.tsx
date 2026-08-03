@@ -22,6 +22,7 @@ import {
   MapPin,
   Bird,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 /* ----------------------------------------------------------------------
    ELEMATH 2.0 — Landing Page
@@ -75,7 +76,7 @@ const PixelButton = ({
   return (
     <button
       className={`font-silk inline-flex items-center gap-2 px-6 py-3 text-xs sm:text-sm tracking-wide border-[3px] ${variants[variant]}
-      shadow-[4px_4px_0_0_#000] active:shadow-[1px_1px_0_0_#000] active:translate-x-[3px] active:translate-y-[3px]
+      shadow-[4px_4px_0_0_#000] active:shadow-[1px_1px_0_0_#000] active:translate-x-0.75 active:translate-y-0.75
       transition-all duration-100 ${className}`}
     >
       {icon}
@@ -100,7 +101,11 @@ const PixelBadgeIcon = ({
 );
 
 function Navbar() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const handleTeacherLogin = () => {
+    navigate("/teacher/login");
+  }
   const links = ["Quests", "For Teachers", "AI Tools", "Leaderboard", "Pricing"];
   return (
     <header className="sticky top-0 z-50 bg-[#0d2818] border-b-[3px] border-black">
@@ -127,10 +132,11 @@ function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <button className="font-silk text-[11px] text-[#dff2e1] hover:text-[#f5c542] px-2">
+          <button className="font-silk text-[11px] text-[#dff2e1] hover:text-[#f5c542] px-2"
+            onClick={handleTeacherLogin}>
             Log in
           </button>
-          <PixelButton variant="gold" className="!px-4 !py-2 !text-[10px]">
+          <PixelButton variant="gold" className="px-4! py-2! text-[10px]!">
             Start Free
           </PixelButton>
         </div>

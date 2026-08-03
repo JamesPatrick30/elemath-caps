@@ -1,52 +1,65 @@
-export interface UploadedFile {
+export type Accent = "leaf" | "sky" | "gold" | "ember" | "bark";
+
+export type NavKey = "dashboard" | "classes" | "analytics" | "settings";
+
+export interface Teacher {
+  name: string;
+}
+
+// Mirrors the Prisma `ClassAnalytics` model
+export interface ClassAnalytics {
+  totalStudents: number;
+  quizzesCreated: number;
+  quizzesCompleted: number;
+  averageScore: number;
+}
+
+// Mirrors the Prisma `Class` model (fields the dashboard actually needs)
+export interface ClassItem {
   id: string;
   name: string;
-  type: 'pdf' | 'doc' | 'sheet' | 'image' | 'other';
-  uploadedAt: string;
-  sizeKb: number;
+  habitat: string;
+  isActive: boolean;
+  classAnalytics?: ClassAnalytics | null;
 }
 
-export interface ClassRoom {
+// Mirrors the Prisma `StudentAnalytics` model
+export interface StudentAnalytics {
+  quizzesTaken: number;
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  totalTimeSpent: number;
+  accuracy: number;
+}
+
+// Mirrors the Prisma `Students` model. There's no `status` field on the
+// backend — status is derived client-side from `analytics.averageScore`
+// (see lib/studentStatus.ts).
+export interface Student {
   id: string;
   name: string;
-  gradeLevel: string;
-  studentCount: number;
-  avgScore: number; // 0-100
-  topicFocus: string;
-  habitat: 'canopy' | 'river' | 'savanna' | 'reef';
-  files: UploadedFile[];
+  email: string;
+  isActive: boolean;
+  classroomId: string;
+  // Not on the Prisma model directly — hydrate via a join/include on the
+  // backend if a cross-class view needs to show which class a row is from.
+  className?: string;
+  analytics?: StudentAnalytics | null;
 }
 
-export interface LeaderboardEntry {
-  id: string;
-  rank: number;
-  studentName: string;
-  className: string;
-  xp: number;
-  streak: number;
-  avatarEmoji: string;
+export type StudentStatus = "on-track" | "watch" | "needs-attention";
+
+// There's no time-series model in the schema (no per-day rollup table).
+// The backend needs to aggregate QuizAttempt.submittedAt into buckets
+// (e.g. group by day/week, avg(score)) to produce this.
+export interface TrendPoint {
+  label: string;
+  avgScore: number;
 }
 
-export interface ActivityEvent {
-  id: string;
-  type: 'quiz_completed' | 'quiz_generated' | 'streak' | 'joined';
-  message: string;
-  timestamp: string;
-  studentName?: string;
-}
-
-export interface StatSummary {
-  id: string;
+export interface StatItem {
   label: string;
   value: string;
-  delta?: string;
-  deltaDirection?: 'up' | 'down' | 'flat';
-  icon: 'students' | 'quizzes' | 'accuracy' | 'streak';
-}
-
-export interface QuizDraftConfig {
-  topic: string;
-  gradeLevel: string;
-  questionCount: number;
-  difficulty: 'sprout' | 'sapling' | 'canopy';
+  accent?: Accent;
 }
