@@ -8,6 +8,6 @@ declare module "express" {
   }
 
   interface Request {
-    user?: User;
+    user: user;
   }
 }
