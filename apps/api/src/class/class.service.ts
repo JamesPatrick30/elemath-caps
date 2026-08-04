@@ -23,7 +23,11 @@ export class ClassService {
             await this.cache.set(hey, updatedClasses);
         }
     }
-    async getUserClasses(userId: string): Promise<any[]> {
+    async getUserClasses(userId?: string | undefined): Promise<any[]> {
+
+        if (!userId) {
+            throw new ConflictException('User ID is required');
+        }
         const cacheKey = this.keyForUserClasses(userId);
 
         const cachedClasses = await this.cache.get<any[]>(cacheKey);

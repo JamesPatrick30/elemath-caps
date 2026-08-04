@@ -11,7 +11,7 @@ export class ClassController {
 
     @Get()
     async getUserClasses(@Req() req: Request): Promise<any[]> {
-        return this.classService.getUserClasses(req.user.sub);
+        return this.classService.getUserClasses(req.user?.sub);
     }
 
     @Post('register')
