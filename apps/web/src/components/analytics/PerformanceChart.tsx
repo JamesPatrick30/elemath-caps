@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from "recharts";
 import PixelPanel from "../common/PixelPanel";
-import type { TrendPoint } from "../../types/dashboard.types";
+import type { TrendPoint } from "../../types";
 
 interface PerformanceChartProps {
   data: TrendPoint[];

@@ -1,4 +1,4 @@
-import type { StatItem } from "../../types/dashboard.types";
+import type { StatItem } from "../../types";
 import PixelPanel from "./PixelPanel";
 
 interface StatHUDProps {

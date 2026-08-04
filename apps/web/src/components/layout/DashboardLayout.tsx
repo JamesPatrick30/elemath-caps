@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
-import type { NavKey, Teacher } from "../../types/dashboard.types";
+import type { NavKey, Teacher } from "../../types";
 
 interface DashboardLayoutProps {
   children: ReactNode;

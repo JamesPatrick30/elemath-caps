@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Accent } from "../../types/dashboard.types";
+import type { Accent } from "../../types";
 
 const ACCENTS: Record<Accent, string> = {
   leaf: "border-leaf-500/60",

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, ChevronDown, LogOut, User } from "lucide-react";
-import type { Teacher } from "../../types/dashboard.types";
+import type { Teacher } from "../../types";
 import { logout } from "../../api/auth";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";

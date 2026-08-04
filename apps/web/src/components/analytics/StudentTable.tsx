@@ -1,6 +1,6 @@
 import PixelPanel from "../common/PixelPanel";
 import { getStudentStatus } from "../../lib/studentStatus";
-import type { Student, StudentStatus } from "../../types/dashboard.types";
+import type { Student, StudentStatus } from "../../types";
 
 const STATUS_STYLES: Record<StudentStatus, string> = {
   "on-track": "text-leaf-400 bg-leaf-500/10 border-leaf-500/40",

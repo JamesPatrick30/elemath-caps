@@ -1,4 +1,4 @@
-import type { Student, StudentStatus } from "../types/dashboard.types";
+import type { Student, StudentStatus } from "../types";
 
 /**
  * Derives a status badge from StudentAnalytics.averageScore, since the

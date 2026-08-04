@@ -1,16 +1,17 @@
 import type { LucideIcon } from "lucide-react";
 import { LayoutDashboard, School, BarChart3, Settings, TreePine } from "lucide-react";
-import type { NavKey } from "../../types/dashboard.types";
-
+import type { NavKey } from "../../types";
+import { useNavigate } from "react-router-dom";
 interface NavItem {
   key: NavKey;
   label: string;
   icon: LucideIcon;
+  url?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { key: "classes", label: "Classes", icon: School },
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, url: "/teacher" },
+  { key: "classes", label: "Classes", icon: School, url: "/teacher/classes" },
   { key: "analytics", label: "Analytics", icon: BarChart3 },
   { key: "settings", label: "Settings", icon: Settings },
 ];
@@ -21,6 +22,14 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ active = "dashboard", onNavigate }: SidebarProps) {
+  const navigate = useNavigate();
+
+  const handleNavigate = (key: NavKey, url?: string) => {
+    onNavigate?.(key);
+    if (url) {
+      navigate(url);
+    }
+  };
   return (
     <aside className="hidden md:flex md:flex-col w-56 shrink-0 bg-canopy-900 border-r-[3px] border-bark-700/70">
       <div className="flex items-center gap-2 px-4 py-5 border-b-[3px] border-bark-700/60">
@@ -31,12 +40,12 @@ export default function Sidebar({ active = "dashboard", onNavigate }: SidebarPro
       </div>
 
       <nav className="flex-1 py-4 px-2 space-y-1">
-        {NAV_ITEMS.map(({ key, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ key, label, icon: Icon, url }) => {
           const isActive = active === key;
           return (
             <button
               key={key}
-              onClick={() => onNavigate?.(key)}
+              onClick={() => handleNavigate(key, url)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 text-left font-body text-sm transition-colors ${
                 isActive
                   ? "bg-canopy-700 text-parchment-100 border-l-[3px] border-leaf-500"

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getClasses } from "../../api/classesApi";
 import PixelPanel from "../common/PixelPanel";
 import ClassCard from "./ClassCard";
-import type { ClassItem } from "../../types/dashboard.types";
+import type { ClassItem } from "../../types";
 
 type Status = "loading" | "ready" | "error";
 

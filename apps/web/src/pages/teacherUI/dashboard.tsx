@@ -3,7 +3,8 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import StatHUD from "../../components/common/StatHUD";
 import ClassOverview from "../../components/classes/ClassOverview";
 import PerformanceOverview from "../../components/analytics/PerformanceOverview";
-import type { ClassItem, NavKey, StatItem, Teacher } from "../../types/dashboard.types";
+import StartQuizModal from "../../components/classes/Startquizmodal";
+import type { ClassItem, NavKey, StatItem, Teacher } from "../../types";
 
 interface TeacherDashboardProps {
   teacher?: Teacher;
@@ -12,6 +13,8 @@ interface TeacherDashboardProps {
 export default function TeacherDashboard({ teacher }: TeacherDashboardProps) {
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const [nav, setNav] = useState<NavKey>("dashboard");
+
+  const [showStartQuizModal, setShowStartQuizModal] = useState(false);
 
   const breadcrumbs = useMemo(
     () => (selectedClass ? ["Dashboard", selectedClass.name] : ["Dashboard"]),
@@ -35,6 +38,10 @@ export default function TeacherDashboard({ teacher }: TeacherDashboardProps) {
       breadcrumbs={breadcrumbs}
       teacher={teacher}
     >
+      <StartQuizModal
+        classItem={selectedClass}
+        onClose={() => setShowStartQuizModal(false)}
+      />
       <StatHUD stats={stats} />
       <ClassOverview onSelectClass={setSelectedClass} />
       <PerformanceOverview classId={selectedClass?.id} />

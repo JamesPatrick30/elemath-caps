@@ -3,7 +3,7 @@ import { getPerformanceTrend, getStudentPerformance } from "../../api/studentsAp
 import PixelPanel from "../common/PixelPanel";
 import PerformanceChart from "./PerformanceChart";
 import StudentTable from "./StudentTable";
-import type { Student, TrendPoint } from "../../types/dashboard.types";
+import type { Student, TrendPoint } from "../../types";
 
 type Status = "loading" | "ready" | "error";
 

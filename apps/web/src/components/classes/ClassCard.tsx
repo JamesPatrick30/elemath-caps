@@ -1,6 +1,6 @@
 import { Users } from "lucide-react";
 import PixelPanel from "../common/PixelPanel";
-import type { Accent, ClassItem } from "../../types/dashboard.types";
+import type { Accent, ClassItem } from "../../types";
 
 function accentForScore(score: number): Accent {
   if (score >= 80) return "leaf";
