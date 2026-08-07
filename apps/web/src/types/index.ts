@@ -6,6 +6,10 @@ export interface Teacher {
   name: string;
 }
 
+export interface loginForm{
+  email: string;
+  password: string;
+}
 // Mirrors the Prisma `ClassAnalytics` model
 export interface ClassAnalytics {
   totalStudents: number;
@@ -121,4 +125,50 @@ export interface ClassRoster {
   classId: string;
   className: string;
   students: RosterStudent[];
+}
+
+// Confirmed request shape from StartQuizDto (POST .../game/create).
+export interface StartSessionInput {
+  classId: string;
+}
+
+// Confirmed against GameService.CreateQuizSession's cache write: the
+// session has no `id` and no join code — it's identified purely by
+// `classId`, which is also the cache key. `students` is the class's full
+// registered roster at creation time, each starting with isInGame: false;
+// sockets are presumably what flips that flag as students connect (event
+// contract still unconfirmed — see useLiveQuizSession.ts).
+export interface SessionStudent {
+  id: string;
+  name: string;
+  isInGame: boolean;
+}
+
+export interface QuizSessiondata {
+  classId: string;
+  students: SessionStudent[];
+  createdAt: string;
+  status: string; // only "active" observed in the service so far
+  isStarted: boolean;
+}
+
+// Mirrors the Prisma `UploadedFile` model (list-view fields only —
+// `questions`/`pptUrl` are omitted here since the lobby just needs
+// enough to display and select a file, not render its contents).
+export interface UploadedFileSummary {
+  id: string;
+  classId: string;
+  fileName: string;
+  summary?: string | null;
+  createdAt: string;
+}
+
+// Mirrors GenerateQuestionsDto / GenerateQuestionsRequest from
+// @repo/types exactly.
+export type QuestionType = "multiple-choice" | "true-false" | "short-answer";
+
+export interface GenerateQuestionsInput {
+  content?: string | null;
+  numberOfQuestions: number;
+  type: QuestionType;
 }

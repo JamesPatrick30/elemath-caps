@@ -11,17 +11,19 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { api } from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import type { loginForm } from "../../types";
 
 export default function TeacherLogin() {
     const navigate = useNavigate();
     const { refreshUser } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const handleLogin = async (email: string, password: string) => {
+    const [loginData, setLoginData] = useState<loginForm>({ email: "", password: "" });
+
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
         try {
-        await api.post("/auth/signIn/teacher", { email, password });
+        await api.post("/auth/signIn/teacher", { email: loginData.email, password: loginData.password });
         await refreshUser();
         navigate("/teacher");
         } catch (error) {
@@ -121,7 +123,7 @@ export default function TeacherLogin() {
 
                 {/* Email */}
 
-                <div className="mt-8">
+                <form onSubmit={handleLogin} className="mt-8">
 
                     <label className="font-silk text-xs">
                     Email
@@ -136,15 +138,15 @@ export default function TeacherLogin() {
 
                     <input
                         type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={loginData.email}
+                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                         placeholder="teacher@email.com"
                         className="w-full border-[3px] border-black bg-white pl-12 pr-4 py-3 outline-none focus:ring-4 focus:ring-yellow-300"
                     />
 
                     </div>
 
-                </div>
+                </form>
 
                 {/* Password */}
 
@@ -162,8 +164,8 @@ export default function TeacherLogin() {
                     />
 
                     <input
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={loginData.password}
+                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         className="w-full border-[3px] border-black bg-white pl-12 pr-12 py-3 outline-none focus:ring-4 focus:ring-yellow-300"
@@ -211,10 +213,9 @@ export default function TeacherLogin() {
                     py-3
                     font-silk
                     shadow-[4px_4px_0_0_#000]
-                    active:translate-x-[3px]
-                    active:translate-y-[3px]
+                    active:translate-x-0.75
+                    active:translate-y-0.74
                     active:shadow-none"
-                    onClick={() => handleLogin(email, password)}
                 >
                     LOGIN TO CLASSROOM
                 </button>

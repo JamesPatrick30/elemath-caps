@@ -1,28 +1,32 @@
 import { useState } from "react";
 import PixelModal from "../common/PixelModal";
 import PixelButton from "../common/PixelButton";
-import { createQuizSession } from "../../api/gameApi";
+import { createQuizSession, getGameSession } from "../../api/gameApi";
 import type { ClassItem } from "../../types";
-
+import type { createQuizSessionResponse } from "@repo/types";
 type Status = "idle" | "starting" | "started" | "error";
 
 interface StartQuizModalProps {
-  classItem?: ClassItem | null;
+  classItem: ClassItem;
   onClose: () => void;
+  onEnterLobby: (session: createQuizSessionResponse) => void;
 }
 
-export default function StartQuizModal({ classItem, onClose }: StartQuizModalProps) {
+export default function StartQuizModal({
+  classItem,
+  onClose,
+  onEnterLobby,
+}: StartQuizModalProps) {
   const [status, setStatus] = useState<Status>("idle");
-  const [session, setSession] = useState<any | null>(null);
-
-  if (!classItem) return null;
+  const [session, setSession] = useState<createQuizSessionResponse | null>(null);
 
   async function handleStart() {
     setStatus("starting");
     try {
-        console.log("Starting quiz session for class ID:", classItem?.id);
-      const res = await createQuizSession(classItem?.id);
-      setSession(res.data);
+      // POST /game/create returns no body (CreateQuizSession resolves
+      // void) — fetch the actual session afterward.
+      const session = await createQuizSession(classItem.id);
+      setSession(session.data);
       setStatus("started");
     } catch {
       setStatus("error");
@@ -72,24 +76,14 @@ export default function StartQuizModal({ classItem, onClose }: StartQuizModalPro
             <span className="text-leaf-400">{classItem.name}</span>.
           </p>
 
-          {session.code ? (
-            <div className="text-center py-4">
-              <p className="font-pixel text-[8px] text-parchment-500 uppercase tracking-wider mb-2">
-                Join Code
-              </p>
-              <p className="font-data text-3xl text-gold-300 tracking-widest">
-                {session.code}
-              </p>
-            </div>
-          ) : (
-            <p className="font-data text-xs text-parchment-300">
-              Session ID: {session.id}
-            </p>
-          )}
 
           <div className="flex justify-end">
-            <PixelButton type="button" variant="leaf" onClick={onClose}>
-              Done
+            <PixelButton
+              type="button"
+              variant="leaf"
+              onClick={() => onEnterLobby(session)}
+            >
+              Enter Lobby
             </PixelButton>
           </div>
         </div>

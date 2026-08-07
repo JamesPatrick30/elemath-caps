@@ -21,12 +21,12 @@ export default function TopBar({ breadcrumbs = ["Dashboard"], teacher }: TopBarP
         navigate("/teacher/login", { replace: true });
     }
   return (
-    <header className="flex items-center justify-between gap-4 px-6 py-4 bg-canopy-900 border-b-[3px] border-bark-700/70">
-      <div className="flex items-center gap-2 font-pixel text-[9px] uppercase tracking-wider text-parchment-300">
+    <header className="flex items-center justify-between gap-4 px-6 py-4 border-b-[3px] border-bark-700/70">
+      <div className="flex items-center gap-2 font-pixel text-[9px] uppercase tracking-wider text-green-700">
         {breadcrumbs.map((crumb, i) => (
           <span key={crumb} className="flex items-center gap-2">
             {i > 0 && <span className="text-bark-600">/</span>}
-            <span className={i === breadcrumbs.length - 1 ? "text-leaf-400" : ""}>
+            <span className={i === breadcrumbs.length - 1 ? "text-green-500" : ""}>
               {crumb}
             </span>
           </span>
@@ -34,7 +34,7 @@ export default function TopBar({ breadcrumbs = ["Dashboard"], teacher }: TopBarP
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="hidden sm:flex items-center gap-2 bg-canopy-800 border-[2px] border-bark-700/60 px-3 py-1.5">
+        <div className="hidden sm:flex items-center gap-2 border-2 border-bark-700/60 px-3 py-1.5">
           <Search className="w-4 h-4 text-parchment-500" />
           <input
             type="text"

@@ -19,7 +19,7 @@ export default function DashboardLayout({
   teacher,
 }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen flex bg-canopy-950">
+    <div className="min-h-screen flex ">
       <Sidebar active={active} onNavigate={onNavigate} />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar breadcrumbs={breadcrumbs} teacher={teacher} />
