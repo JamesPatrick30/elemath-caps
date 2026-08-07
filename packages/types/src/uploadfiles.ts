@@ -17,4 +17,5 @@ export interface workerQueue {
 export interface uploadTask {
     id: string;
     status: string;
+    isDone: boolean;
 }

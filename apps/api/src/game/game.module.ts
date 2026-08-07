@@ -6,9 +6,10 @@ import { QueueNames } from '../types/queue';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '../redis/redis.module';
 import { WebsocketModule } from '../websocket/websocket.module';
+import { AuthModule } from '../auth/auth.module';
 @Module({
   controllers: [GameController],
   providers: [GameService],
-  imports: [BullModule.registerQueue({name: QueueNames.GenerateQuestions}), PrismaModule, RedisModule, WebsocketModule]
+  imports: [AuthModule, BullModule.registerQueue({name: QueueNames.GenerateQuestions}), PrismaModule, RedisModule, WebsocketModule]
 })
 export class GameModule {}

@@ -9,7 +9,6 @@ import {
   REDIS_PUBLISHER,
   REDIS_SUBSCRIBER,
 } from './redis.provider';
-
 @Injectable()
 export class RedisPubSubService implements OnModuleInit {
   constructor(

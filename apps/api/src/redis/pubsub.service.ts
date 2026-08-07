@@ -10,6 +10,7 @@ import {
   REDIS_SUBSCRIBER,
 } from './redis.provider';
 import { WebsocketService } from '../websocket/websocket.service';
+import { SocketEvents } from '../types/socketEvents';
 @Injectable()
 export class RedisPubSubService implements OnModuleInit {
   constructor(
@@ -31,7 +32,7 @@ export class RedisPubSubService implements OnModuleInit {
       const data = JSON.parse(message);
       switch (channel) {
         case 'pdf-generated':
-          this.websocketService.emit('pdf-generated', data, data.id);
+          this.websocketService.emit(SocketEvents.PDF_UPLOADED, data, data.id);
           break;
         default:
           console.warn(`No handler for channel: ${channel}`);

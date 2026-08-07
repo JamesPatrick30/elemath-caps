@@ -9,8 +9,7 @@ import { CookieNames } from '../types/cookie';
     origin: '*',
     credentials: true,
   },
-}
-)
+})
 export class WebsocketGateway {
   constructor(private readonly jwtService: JwtService, private readonly cacheService: CacheService) {}
   @WebSocketServer()
@@ -57,6 +56,10 @@ export class WebsocketGateway {
     } else {
       this.server.emit(event, data);
     }
+  }
+
+  joinRoom(client: Socket, room: string) {
+    client.join(room);
   }
 
 

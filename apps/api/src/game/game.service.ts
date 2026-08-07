@@ -6,9 +6,10 @@ import { QueueNames } from '../types/queue';
 import { GenerateQuestionsRequest } from '@repo/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../redis/cache.service';
-import type { quizSession } from "@repo/types";
+import type { quizSession, createQuizSessionResponse } from "@repo/types";
 import type { addQuestion, getQuestionsResponse } from '../types/game';
-import { SocketEvents } from '../types/game';
+import { SocketEvents } from '../types/socketEvents';
+import { interval } from 'rxjs';
 @Injectable()
 export class GameService {
   constructor(
@@ -22,20 +23,39 @@ export class GameService {
     return `game_session_${classId}_${type}`;
   }
 
+  private gameSessionCheckKey(userId: string): string {
+    return `game_session_check_${userId}`;
+  }
+
   private generateRandomQuestionsId(): string {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }
   
-  async generateQuestions(data: GenerateQuestionsRequest): Promise<void> {
+  async generateQuestions(data: GenerateQuestionsRequest): Promise<{jj: null}> {
     console.log('Adding GenerateQuestions job to the queue:', data);
+
+    setTimeout(() => {
+      console.log('Job added to the queue:', data);
+    }, 1000);
     await this.generateQuestionsQueue.add('generate-questions', {content: data.content, numberOfQuestions: data.numberOfQuestions, type: data.type} as GenerateQuestionsRequest, {
       attempts: 3,
       removeOnComplete: 100,
       removeOnFail: 100,
     });
+
+    return {jj: null};
   }
 
-  async CreateQuizSession( classId: string ): Promise<void> {
+  async isQuizSessionExist(userId: string): Promise<boolean> {
+    const checkKey = this.gameSessionCheckKey(userId);
+    const exists = await this.cacheService.get(checkKey);
+
+    if (!exists) {
+      throw new NotFoundException(`No active quiz session found for user ID ${userId}`);
+    }
+    return true;
+  }
+  async CreateQuizSession( classId: string, userId: string ): Promise<createQuizSessionResponse> {
     const ClassData = await this.prismaService.client().class.findUnique({
       where: { id: classId },
       include: { students: true },
@@ -54,7 +74,11 @@ export class GameService {
       isStarted: false,
     }
 
+    const checkKey = this.gameSessionCheckKey(userId);
+    this.cacheService.set(checkKey, 'true', 3600); // Set expiration to 1 hour (3600 seconds)
     await this.cacheService.set(key, sessionData, 3600); // Set expiration to 1 hour (3600 seconds)
+    this.websocketService.joinRoom(userId, `class_${classId}`);
+    return { sessionId: classId, message: `Quiz session for class ID ${classId} has been created.` };
   }
 
   async getQuizSession(classId: string): Promise<any> {
@@ -114,12 +138,13 @@ export class GameService {
     await this.cacheService.set(key, JSON.stringify(updatedQuestions));
   }
 
-  async CancelQuizSession(classId: string): Promise<{message: string}> {
+  async CancelQuizSession(classId: string, userId: string): Promise<{message: string}> {
     const sessionKey = this.gameSessionCacheKey(classId, 'session');
     const questionsKey = this.gameSessionCacheKey(classId, 'questions');
 
     await this.cacheService.del(sessionKey);
     await this.cacheService.del(questionsKey);
+    await this.cacheService.del(this.gameSessionCheckKey(userId));
 
     return { message: `Quiz session for class ID ${classId} has been canceled.` };
   }
@@ -134,6 +159,7 @@ export class GameService {
     }
 
     this.cacheService.set(sessionKey, JSON.stringify({ ...sessionData, isStarted: true } as quizSession));
+    
     this.websocketService.emit( SocketEvents.QUIZ_STARTED, { message: 'The quiz has started!', classId });
     return { message: `Quiz session for class ID ${classId} has been started.` };
   }

@@ -24,3 +24,8 @@ export interface removeQuestionsFromSessionRequest {
     classId: string;
     questionIds: string[];
 }
+
+export interface createQuizSessionResponse {
+    sessionId: string;
+    message: string;
+}

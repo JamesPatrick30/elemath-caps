@@ -1,6 +1,8 @@
 import {
     Body,
   Controller,
+  Get,
+  Param,
   Post,
   Req,
   UploadedFile,
@@ -35,20 +37,26 @@ export class PdfController {
     )
     async upload(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: UploadPdfDto,
-    @Req() req : Request
+        @Body() body: UploadPdfDto,
+        @Req() req : Request
     ) {
-        
-    await this.pdfService.addPdfJob({
-        userId: req.user.sub,
-        fileName: file.filename,
-        originalName: file.originalname,
-        path: file.path,
-        classId: body.classId,
-    });
+            
+        await this.pdfService.addPdfJob({
+            userId: req.user.sub,
+            fileName: file.filename,
+            originalName: file.originalname,
+            path: file.path,
+            classId: body.classId,
+        });
 
-    return {
-        success: true,
-    };
+        return {
+            success: true,
+        };
+    }
+
+    @Get(':classId')
+    async getPdf(@Param('classId') classId: string) {
+        console.log('Fetching PDF for classId:', classId);
+        return this.pdfService.getPdf(classId);
     }
 }

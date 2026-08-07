@@ -10,7 +10,3 @@ export interface getQuestionsResponse extends addQuestion {
     id: string;
 }
 
-export const SocketEvents = {
-    QUIZ_STARTED: 'quiz-started',
-    QUIZ_ENDED: 'quiz-ended',
-};
