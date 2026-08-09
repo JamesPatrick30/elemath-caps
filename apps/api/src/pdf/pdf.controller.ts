@@ -56,7 +56,6 @@ export class PdfController {
 
     @Get(':classId')
     async getPdf(@Param('classId') classId: string) {
-        console.log('Fetching PDF for classId:', classId);
         return this.pdfService.getPdf(classId);
     }
 }

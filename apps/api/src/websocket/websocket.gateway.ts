@@ -20,7 +20,6 @@ export class WebsocketGateway {
 
     const cookies = cookie.split(';');
 
-    console.log('Parsed cookies:', cookies);
     for (const c of cookies) {
         const [key, value] = c.trim().split('=');
 
@@ -44,7 +43,6 @@ export class WebsocketGateway {
         const payload = await this.jwtService.verifyAsync(token,{secret: process.env.ACCESS_JWT_SECRET});
 
         this.cacheService.set(`socket:${payload.sub}`, client.id, 3600); // Store for 1 hour
-        console.log(`socket id form cache: ${await this.cacheService.get(`socket:${payload.sub}`)}`);
     } catch {
       client.disconnect();
     }

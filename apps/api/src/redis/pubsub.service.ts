@@ -27,7 +27,6 @@ export class RedisPubSubService implements OnModuleInit {
     await this.subscriber.subscribe('pdf-generated');
 
     this.subscriber.on('message', (channel, message) => {
-      console.log(`Received on ${channel}:`, message);
 
       const data = JSON.parse(message);
       switch (channel) {

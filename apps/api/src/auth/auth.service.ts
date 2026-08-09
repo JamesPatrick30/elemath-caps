@@ -27,7 +27,6 @@ export class AuthService {
 
     async teacherLogin(email: string, password: string, res: Response): Promise<{ accessToken: string; refreshToken: string }> {
         const teacher = await this.prismaService.client().user.findUnique({ where: { email } });
-        console.log('Teacher found:', teacher); // Log the teacher object for debugging
 
         if (!teacher){
             throw new NotFoundException('Teacher not found');
@@ -63,7 +62,6 @@ export class AuthService {
     async studentLogin(email: string, password: string, res: Response): Promise<{ accessToken: string; refreshToken: string }> {
         const student = await this.prismaService.client().students.findUnique({ where: { email } });
 
-        console.log('Student found:', student); // Log the student object for debugging
         if (!student){
             throw new NotFoundException('User not found');
         }

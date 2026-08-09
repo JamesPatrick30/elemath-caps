@@ -27,7 +27,6 @@ export class GameController {
     async createGameSession(@Body() body: StartQuizDto, @Req() req: Request) {
         const { classId } = body;
         const userId = req.user.sub;
-        console.log("Creating quiz session for class ID:", classId);
         return this.gameService.CreateQuizSession(classId, userId);
     }
 
