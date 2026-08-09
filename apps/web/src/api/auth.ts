@@ -16,3 +16,7 @@ export async function logout() {
 export async function getProfile() {
   return api.get("/users/profile");
 }
+
+export async function LoginStudent(data: SignInType) {
+  return api.post("/auth/signIn/student", data);
+}

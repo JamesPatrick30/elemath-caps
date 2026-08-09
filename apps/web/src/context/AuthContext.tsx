@@ -4,9 +4,7 @@ import {
     useEffect,
     useState,
 } from "react";
-
 import { api } from "../api/axios";
-
 type User = {
     id: string;
     email: string;
@@ -39,8 +37,14 @@ export function AuthProvider({
 
     const loadUser = async () => {
         try {
-            const res = await api.get("/auth/teacher/me");
+            const res = await api.get("/auth/me");
             setUser(res.data);
+            // if (!res.data) {
+            //     window.location.href = "/login";
+            // }
+            // if (res.data.role === "student") {
+            //     navigate("/student");
+            // }
         } catch {
             setUser(null);
         } finally {

@@ -1,19 +1,34 @@
 import axios from "axios";
 import { refreshAccessToken } from "./api";
+
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true, // sends refresh/access cookies
+  withCredentials: true,
 });
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      return refreshAccessToken().then((newAccessToken) => {
-        error.config.headers.Authorization = `Bearer ${newAccessToken}`;
-        return axios.request(error.config);
-      });
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status !== 401 ||
+      originalRequest._retry ||
+      originalRequest.url?.includes("/auth/refresh")
+    ) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    originalRequest._retry = true;
+
+    try {
+      const newAccessToken = await refreshAccessToken();
+
+      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+      return api.request(originalRequest);
+    } catch (refreshError) {
+      return Promise.reject(refreshError);
+    }
   }
 );
