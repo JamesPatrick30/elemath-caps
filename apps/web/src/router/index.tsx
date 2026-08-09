@@ -7,6 +7,8 @@ import ClassesPage from "../pages/teacherUI/Classes";
 import GuestRoute from "./GuestRoute";
 import ProtectedRoute from "./ProtectedRoute";
 import QuizLobby from "../pages/teacherUI/QuizLobby";
+import StudentLogin from "../pages/auth/StudentLogin";
+import StudentDashboardPage from "../pages/studentUI/dashboardPage";
 export const router = createBrowserRouter([
     {
         element: <GuestRoute />,
@@ -19,10 +21,16 @@ export const router = createBrowserRouter([
                 path: "/teacher/login",
                 element: <TeacherLogin />,
             },
+            {
+                path: "/student/login",
+                element: <StudentLogin />,
+            },
         ],
     },
+
+    // Teacher routes
     {
-        element: <ProtectedRoute />,
+        element: <ProtectedRoute allowedRole="teacher" />,
         children: [
             {
                 path: "/teacher",
@@ -34,8 +42,19 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/teacher/quiz-lobby/:classId",
-                element: <QuizLobby/>,
-            }
+                element: <QuizLobby />,
+            },
+        ],
+    },
+
+    // Student routes
+    {
+        element: <ProtectedRoute allowedRole="student" />,
+        children: [
+            {
+                path: "/student",
+                element: <StudentDashboardPage />,
+            },
         ],
     },
 ]);

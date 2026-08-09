@@ -11,7 +11,7 @@ import type {
 interface PerformanceParams {
   classId?: string;
 }
-
+import type { StudentDashboardData } from "@repo/types";
 // These two stay unconfirmed — nothing in StudentsService backs them.
 // If performance analytics end up living on StudentsService too, adjust
 // the paths/response shape to match once that controller exists.
@@ -49,4 +49,8 @@ export async function updateStudent(
 // Soft-delete — service sets isActive: false rather than removing the row.
 export async function deleteStudent(studentId: string) {
   return api.delete<MessageResponse>(`/students/${studentId}`);
+}
+
+export async function getStudentDashboard() {
+  return api.get<StudentDashboardData>(`/student/dashboard`);
 }
