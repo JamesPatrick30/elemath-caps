@@ -9,13 +9,15 @@ import {  AccessTeacherStrategy } from './strategy/accessTeacher.strategy';
 import { AccessStudentsStrategy } from './strategy/accessStudents.strategy';
 import { RefreshStrategy } from './strategy/refresh.strategy';
 import { RefreshGuard } from './guard/refresh.guard';
+import { jwtGuard } from './guard/jwt.guard';
+import { jwtStrategy } from './strategy/jwt.strategy';
 @Module({
   imports: [
     JwtModule.register({}),
     PrismaModule, 
   ],
   controllers: [AuthController],
-  providers: [AuthService, SharedService, AccessTeacherGuard, AccessTeacherStrategy, AccessStudentsStrategy, RefreshStrategy, RefreshGuard],
+  providers: [AuthService, SharedService, AccessTeacherGuard, AccessTeacherStrategy, AccessStudentsStrategy, RefreshStrategy, RefreshGuard, jwtGuard, jwtStrategy],
   exports: [AuthService, AccessTeacherGuard, AccessTeacherStrategy, AccessStudentsStrategy]
 })
 export class AuthModule {}

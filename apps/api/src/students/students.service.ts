@@ -1,9 +1,14 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../redis/cache.service';
+import { SharedService } from '../shared/shared.service';
 @Injectable()
 export class StudentsService {
-    constructor(private readonly prismaService: PrismaService, private readonly cache: CacheService) {}
+    constructor(
+        private readonly prismaService: PrismaService, 
+        private readonly cache: CacheService,
+        private readonly sharedService: SharedService,
+    ) {}
 
     private keyForUserStudents(userId: string): string {
         return `user_students_${userId}`;
@@ -68,13 +73,15 @@ export class StudentsService {
         if (existingStudent) {
             throw new ConflictException('Student with the same email already exists');
         }
+
+        const HashedPassword = await this.sharedService.hashPassword(password);
         await this.prismaService.client().students.create({
             data: {
                 teacherId,
                 classroomId: classId,
                 name: studentName,
                 email: studentEmail,
-                password, // You might want to generate a random password or handle this differently
+                password: HashedPassword, // You might want to generate a random password or handle this differently
             }
         });
         await this.cache.del(cacheKey);

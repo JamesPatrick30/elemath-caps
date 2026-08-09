@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
@@ -27,9 +27,10 @@ export class AuthService {
 
     async teacherLogin(email: string, password: string, res: Response): Promise<{ accessToken: string; refreshToken: string }> {
         const teacher = await this.prismaService.client().user.findUnique({ where: { email } });
+        console.log('Teacher found:', teacher); // Log the teacher object for debugging
 
         if (!teacher){
-            throw new NotFoundException('User not found');
+            throw new NotFoundException('Teacher not found');
         }
 
         if (teacher.isActive === false) {
@@ -37,37 +38,39 @@ export class AuthService {
         }
 
         const isPasswordValid = await this.sharedService.comparePasswords(password, teacher.password);
+
         if (!isPasswordValid) {
-            throw new NotFoundException('Invalid credentials');
+            throw new UnauthorizedException('Password does not match');
         }
 
         const tokens = this.generateTokens({ sub: teacher.id, email: teacher.email, role: 'teacher' });
         
         res.cookie(this.cookieNames.accessToken, tokens.accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_STATUS === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60 * 1000, // 15 minutes
+            httpOnly: true,
+            secure: process.env.NODE_STATUS === 'production',
+            sameSite: 'strict',
+            maxAge: 15 * 60 * 1000, // 15 minutes
         });
         res.cookie(this.cookieNames.refreshToken, tokens.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_STATUS === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            httpOnly: true,
+            secure: process.env.NODE_STATUS === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
         return tokens;
     }
 
     async studentLogin(email: string, password: string, res: Response): Promise<{ accessToken: string; refreshToken: string }> {
-        const student = await this.prismaService.client().user.findUnique({ where: { email } });
+        const student = await this.prismaService.client().students.findUnique({ where: { email } });
 
+        console.log('Student found:', student); // Log the student object for debugging
         if (!student){
             throw new NotFoundException('User not found');
         }
 
         const isPasswordValid = await this.sharedService.comparePasswords(password, student.password);
         if (!isPasswordValid) {
-            throw new NotFoundException('Invalid credentials');
+            throw new UnauthorizedException('Password does not match');
         }
 
         const tokens = this.generateTokens({ sub: student.id, email: student.email, role: 'student' });

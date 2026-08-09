@@ -4,12 +4,13 @@ import type { Response, Request } from 'express';
 import { SignInDto } from './dto/signIn.dto';
 import {RefreshGuard} from './guard/refresh.guard';
 import { AccessTeacherGuard } from './guard/accessTeacher.guard';
+import { jwtGuard } from './guard/jwt.guard';
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) {}
 
-    @Get('teacher/me')
-    @UseGuards(AccessTeacherGuard)
+    @Get('me')
+    @UseGuards(jwtGuard)
     async getMe(@Req() req: Request) {
         console.log('User from request:', req.user); // Log the user object for debugging
         return req.user;
@@ -28,6 +29,7 @@ export class AuthController {
     @Post('refresh')
     @UseGuards(RefreshGuard)
     async refreshTokens(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
+        console.log('User from request in refreshTokens:', req.user); // Log the user object for debugging
         return this.authService.refreshTokens(res, req.user);
     }
 
