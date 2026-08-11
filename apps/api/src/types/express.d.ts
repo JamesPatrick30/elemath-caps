@@ -5,6 +5,7 @@ declare module "express" {
     sub: string;
     email: string;
     role: string;
+    classId?: string;
   }
 
   interface Request {

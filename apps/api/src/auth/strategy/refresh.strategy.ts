@@ -22,6 +22,6 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
 
   async validate(payload: any) {
 
-    return { sub: payload.sub, email: payload.email, role: payload.role };
+    return { sub: payload.sub, email: payload.email, role: payload.role, classId: payload?.classId };
   }
 }

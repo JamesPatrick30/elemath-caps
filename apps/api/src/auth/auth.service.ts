@@ -60,7 +60,11 @@ export class AuthService {
     }
 
     async studentLogin(email: string, password: string, res: Response): Promise<{ accessToken: string; refreshToken: string }> {
-        const student = await this.prismaService.client().students.findUnique({ where: { email } });
+        
+        const student = await this.prismaService.client().students.findUnique({ 
+            where: { email },
+            select: { id: true, email: true, password: true, classroomId: true }
+        });
 
         if (!student){
             throw new NotFoundException('User not found');
@@ -71,25 +75,25 @@ export class AuthService {
             throw new UnauthorizedException('Password does not match');
         }
 
-        const tokens = this.generateTokens({ sub: student.id, email: student.email, role: 'student' });
+        const tokens = this.generateTokens({ sub: student.id, email: student.email, role: 'student', classId: student.classroomId });
         
         res.cookie(this.cookieNames.accessToken, tokens.accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_STATUS === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60 * 1000, // 15 minutes
+            httpOnly: true,
+            secure: process.env.NODE_STATUS === 'production',
+            sameSite: 'strict',
+            maxAge: 15 * 60 * 1000, // 15 minutes
         });
         res.cookie(this.cookieNames.refreshToken, tokens.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_STATUS === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            httpOnly: true,
+            secure: process.env.NODE_STATUS === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
         return tokens;
     }
 
     async refreshTokens(res: Response, user: any): Promise<{ accessToken: string; refreshToken: string }> {
-        const tokens = this.generateTokens({ sub: user.sub, email: user.email, role: user.role });
+        const tokens = this.generateTokens({ sub: user.sub, email: user.email, role: user.role, classId: user?.classId });
 
         res.cookie(this.cookieNames.accessToken, tokens.accessToken, {
             httpOnly: true,

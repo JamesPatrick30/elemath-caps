@@ -24,6 +24,6 @@ export class AccessStudentsStrategy extends PassportStrategy(Strategy, 'access-s
     if(payload.role !== 'student') {
       throw new UnauthorizedException('Unauthorized');
     }
-    return { sub: payload.sub, email: payload.email, role: payload.role };
+    return { sub: payload.sub, email: payload.email, role: payload.role, classId: payload?.classId };
   }
 }
