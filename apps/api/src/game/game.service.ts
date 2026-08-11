@@ -69,7 +69,7 @@ export class GameService {
 
     const sessionData: quizSession = {
       classId: ClassData.id,
-      students: ClassData.students.map(student => ({ id: student.id, name: student.name, isInGame: false })),
+      students: ClassData.students.map(student => ({ id: student.id, name: student.name, isInGame: false,joinedAt: null })),
       createdAt: new Date().toISOString(),
       status: 'active',
       isStarted: false,
@@ -89,6 +89,10 @@ export class GameService {
     if (!sessionData) {
       throw new NotFoundException(`No active quiz session found for class ID ${classId}`);
     }
+    // console.log('sessionData:', sessionData);
+    // console.log('typeof sessionData:', typeof sessionData);
+    // console.log('sessionData.students:', sessionData);
+    // console.log('sessionData keys:', Object.keys(sessionData ?? {}));
     return sessionData;
   }
 
@@ -164,4 +168,56 @@ export class GameService {
     this.websocketService.emit( SocketEvents.QUIZ_STARTED, { message: 'The quiz has started!', classId });
     return { message: `Quiz session for class ID ${classId} has been started.` };
   }
-} 
+
+  async isGameSessionExistStudent(classId?: string ): Promise<{message: string, exists: boolean}> {
+
+    if (!classId) {
+      throw new NotFoundException('Class ID is required to check for an active game session.');
+    }
+    console.log(`Checking if game session exists for class ID: ${classId}`);
+    const key = this.gameSessionCheckKey(classId);
+    const exists = await this.cacheService.get(key);
+    return { message: `Game session for class ID ${classId} ${exists ? 'exists' : 'does not exist'}`, exists: !!exists };
+  }
+
+  async joinQuizSession(classId: string, userId: string): Promise<{message: string}> {
+    const sessionKey = this.gameSessionCacheKey(classId, 'session');
+    const sessionData = await this.cacheService.get<quizSession>(sessionKey);
+
+    if (!sessionData) {
+      throw new NotFoundException(`No active quiz session found for class ID ${classId}`);
+    }
+
+    sessionData.students.forEach(student => {
+      if (!student.isInGame && student.id === userId) {
+        student.isInGame = true;
+        student.joinedAt = new Date().getTime();
+      }
+    });
+
+    await this.cacheService.set(sessionKey, JSON.stringify(sessionData));
+    return { message: `Successfully joined quiz session for class ID ${classId}` };
+  }
+
+  async getStudentsInSession(
+    classId?: string,
+  ): Promise<quizSession> {
+    if (!classId) {
+      throw new NotFoundException(
+        'Class ID is required to fetch students in session.',
+      );
+    }
+
+    const sessionKey = this.gameSessionCacheKey(classId, 'session');
+
+    const sessionData: quizSession | null = await this.cacheService.get(sessionKey);
+
+    if (!sessionData) {
+      throw new NotFoundException(
+        `No active quiz session found for class ID ${classId}`,
+      );
+    }
+    return sessionData;
+  }
+}
+

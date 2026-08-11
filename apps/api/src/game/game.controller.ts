@@ -6,6 +6,7 @@ import { StartQuizDto } from './dto/startQuiz.dto';
 import { GenerateQuestionsDto } from './dto/generateQuestions.dto';
 import { AddQuestionDto } from './dto/addQuestion.dto';
 import { RemoveQuestionsDto } from './dto/removeQuestions.dto';
+import { AccessStudentGuard } from '../auth/guard/accessStudent.guard';
 @Controller('game')
 export class GameController {
     constructor(private readonly gameService: GameService) {}
@@ -16,9 +17,16 @@ export class GameController {
         return this.gameService.getQuizSession(classId);
     }
 
+    @UseGuards(AccessStudentGuard)
+    @Get('isGameSession')
+    async isGameSessionExistStudent(@Req() req: Request) {
+        console.log(`Checking game session for student with classId: ${req.user.classId}`);
+        return this.gameService.isGameSessionExistStudent(req.user.classId);
+    }
+
     @UseGuards(AccessTeacherGuard)
     @Get('isSessionExist/teacher')
-    async isGameSessionExist(@Req() req: Request) {
+    async isGameSessionExistTeacher(@Req() req: Request) {
         return this.gameService.isQuizSessionExist(req.user.sub);
     }
 
@@ -60,5 +68,19 @@ export class GameController {
     async generateQuestions(@Body() body: GenerateQuestionsDto) {
         const { content, numberOfQuestions, type } = body;
         return this.gameService.generateQuestions({ content, numberOfQuestions, type });
+    }
+
+    @Post('join/:classId')
+    @UseGuards(AccessStudentGuard)
+    async joinGameSession(@Param('classId') classId: string, @Req() req: Request) {
+        console.log(`Student attempting to join quiz session for classId: ${classId}`);
+        return this.gameService.joinQuizSession(classId, req.user.sub);
+    }
+
+    @Get('students')
+    @UseGuards(AccessStudentGuard)
+    async getStudentsInSession(@Req() req: Request) {
+        const classId = req.user.classId;
+        return this.gameService.getStudentsInSession(classId);
     }
 }
