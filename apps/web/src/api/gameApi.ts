@@ -1,6 +1,6 @@
 import { api } from "./axios";
 import type { MessageResponse, StartSessionInput, QuizSessiondata } from "../types";
-import type { createQuizSessionResponse } from "@repo/types";
+import type { createQuizSessionResponse, quizSession } from "@repo/types";
 // Base path confirmed: @Controller('game').
 
 // GameService.CreateQuizSession returns Promise<void> and the controller
@@ -52,5 +52,25 @@ export const addQuestion = async (payload: any) => {
     return response.data;
   } catch (error) {
     console.error("Error adding question:", error);
+  }
+};
+
+export const joinQuizSession = async (classId: string) => {
+  try {
+    const response = await api.post(`/game/join/${classId}`);
+    console.log("Joined quiz session successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error joining quiz session:", error);
+  }
+}
+
+export const getStudentsInSession = async (): Promise<quizSession['students']> => {
+  try {
+    const response = await api.get(`/game/students`);
+    return response.data.students; // Assuming the API returns a list of students in the session
+  } catch (error) {
+    console.error("Error fetching students in session:", error);
+    return [];
   }
 };

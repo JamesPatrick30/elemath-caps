@@ -1,44 +1,31 @@
-import type { MouseEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { X } from "lucide-react";
-import PixelPanel from "./PixelPanel";
-import type { Accent } from "../../types";
+import { accentHex, notch } from "../../lib/pixel";
 
 interface PixelModalProps {
   title: string;
-  children: ReactNode;
+  accent?: string;
   onClose: () => void;
-  accent?: Accent;
+  children: ReactNode;
 }
 
-export default function PixelModal({
-  title,
-  children,
-  onClose,
-  accent = "gold",
-}: PixelModalProps) {
-  function stop(e: MouseEvent) {
-    e.stopPropagation();
-  }
+export default function PixelModal({ title, accent = "gold", onClose, children }: PixelModalProps) {
+  const hex = accentHex(accent);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-canopy-950/80 p-4"
-      onClick={onClose}
-    >
-      <div onClick={stop} className="w-full max-w-md">
-        <PixelPanel accent={accent} className="relative">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-parchment-300 hover:text-parchment-100"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <h2 className="font-pixel text-[10px] text-parchment-100 uppercase tracking-wider mb-4 pr-6">
-            {title}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div style={{ ...notch(10), background: hex }} className="p-0.75 w-full max-w-sm">
+        <div style={notch(7)} className="bg-canopy-900 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <span className="font-pixel text-[10px]" style={{ color: hex }}>
+              {title}
+            </span>
+            <button onClick={onClose} aria-label="Close">
+              <X size={16} className="text-parchment-300" />
+            </button>
+          </div>
           {children}
-        </PixelPanel>
+        </div>
       </div>
     </div>
   );

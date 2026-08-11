@@ -19,6 +19,20 @@ export async function getStudentPerformance(params: PerformanceParams = {}) {
   return api.get<Student[]>("/analytics/students/performance", { params });
 }
 
+import type { StudentPerformanceResponse, TrendPointResponse } from "@repo/types";
+
+interface ClassScopedParams {
+  classId?: string;
+}
+
+export async function getStudentPerformanceTeacher(params: ClassScopedParams = {}) {
+  return api.get<StudentPerformanceResponse[]>("/teacher/students/performance", { params });
+}
+
+export async function getPerformanceTrendTeacher(params: ClassScopedParams = {}) {
+  return api.get<TrendPointResponse[]>("/teacher/students/trend", { params });
+}
+
 export async function getPerformanceTrend(params: PerformanceParams = {}) {
   return api.get<TrendPoint[]>("/analytics/performance-trend", { params });
 }
@@ -53,4 +67,9 @@ export async function deleteStudent(studentId: string) {
 
 export async function getStudentDashboard() {
   return api.get<StudentDashboardData>(`/student/dashboard`);
+}
+
+export async function isGameSessionExist(): Promise<{ message: string; exists: boolean }> {
+  const response = await api.get(`/game/isGameSession`);
+  return response.data;
 }

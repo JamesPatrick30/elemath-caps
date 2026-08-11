@@ -9,6 +9,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import QuizLobby from "../pages/teacherUI/QuizLobby";
 import StudentLogin from "../pages/auth/StudentLogin";
 import StudentDashboardPage from "../pages/studentUI/dashboardPage";
+import StudentQuizLobby from "../pages/studentUI/quizLobby";
 export const router = createBrowserRouter([
     {
         element: <GuestRoute />,
@@ -55,6 +56,10 @@ export const router = createBrowserRouter([
                 path: "/student",
                 element: <StudentDashboardPage />,
             },
+            {
+                path: "/student/quiz-lobby",
+                element: <StudentQuizLobby />,
+            }
         ],
     },
 ]);

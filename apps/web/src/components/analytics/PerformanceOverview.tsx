@@ -43,9 +43,7 @@ export default function PerformanceOverview({ classId }: PerformanceOverviewProp
   if (status === "loading") {
     return (
       <PixelPanel>
-        <p className="font-body text-sm text-parchment-300">
-          Loading performance data…
-        </p>
+        <p className="font-body text-sm text-parchment-300">Loading performance data…</p>
       </PixelPanel>
     );
   }

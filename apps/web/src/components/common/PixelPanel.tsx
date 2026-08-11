@@ -1,42 +1,26 @@
 import type { ReactNode } from "react";
-import type { Accent } from "../../types";
-
-const ACCENTS: Record<Accent, string> = {
-  leaf: "border-leaf-500/60",
-  sky: "border-sky-400/60",
-  gold: "border-gold-400/60",
-  ember: "border-ember-500/60",
-  bark: "border-bark-700/70",
-};
+import { accentHex, notch } from "../../lib/pixel";
 
 interface PixelPanelProps {
   children: ReactNode;
-  title?: string;
-  accent?: Accent;
+  accent?: string; // named accent ("leaf" | "sky" | "gold" | "ember" | "bark" | "grape" | "bubblegum") or a raw hex
   className?: string;
+  notchSize?: number;
 }
 
 export default function PixelPanel({
   children,
-  title,
   accent = "bark",
   className = "",
+  notchSize = 10,
 }: PixelPanelProps) {
-  return (
-    <div
-      className={`relative bg-canopy-800/90 border-[3px] ${ACCENTS[accent]} shadow-[0_0_0_2px_rgba(0,0,0,0.35)] ${className}`}
-    >
-      <span className="absolute -top-1 -left-1 w-2 h-2 bg-bark-700" />
-      <span className="absolute -top-1 -right-1 w-2 h-2 bg-bark-700" />
-      <span className="absolute -bottom-1 -left-1 w-2 h-2 bg-bark-700" />
-      <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-bark-700" />
+  const hex = accentHex(accent);
 
-      {title && (
-        <div className="px-4 py-2.5 border-b-[3px] border-bark-700/60 font-pixel text-[9px] leading-none text-parchment-100 tracking-wider uppercase">
-          {title}
-        </div>
-      )}
-      <div className="p-4">{children}</div>
+  return (
+    <div style={{ ...notch(notchSize), background: hex }} className={`p-0.75 ${className}`}>
+      <div style={notch(Math.max(notchSize - 3, 4))} className="h-full w-full bg-canopy-900 p-4">
+        {children}
+      </div>
     </div>
   );
 }

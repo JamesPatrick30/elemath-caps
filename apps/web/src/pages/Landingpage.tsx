@@ -7,7 +7,6 @@ import {
   ToggleLeft,
   PenLine,
   Target,
-  Play,
   ChevronRight,
   Star,
   Zap,
@@ -32,6 +31,13 @@ import { useNavigate } from "react-router-dom";
    preschool: deep canopy greens, dirt browns, ember orange, treasure gold.
    Fonts: "Press Start 2P" for the loudest pixel moments (used sparingly),
    "Silkscreen" for UI/labels, "Inter" for anything meant to be read fast.
+
+   Navigation note: the primary job of this page is getting a student or
+   a teacher to their own login as fast and as clearly as possible. Every
+   entry point uses two big, color-coded, icon-led buttons (green = student,
+   gold = teacher) repeated at the top, middle, and bottom of the page so
+   a young reader never has to hunt for it or read fine print to know
+   which one is theirs.
 ------------------------------------------------------------------------- */
 
 const PixelPanel = ({
@@ -62,11 +68,13 @@ const PixelButton = ({
   variant = "gold",
   icon,
   className = "",
+  onClick,
 }: {
   children: React.ReactNode;
   variant?: "gold" | "leaf" | "dark";
   icon?: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }) => {
   const variants: Record<string, string> = {
     gold: "bg-[#f5c542] hover:bg-[#ffd75e] text-[#1b120a] border-black",
@@ -75,6 +83,7 @@ const PixelButton = ({
   };
   return (
     <button
+      onClick={onClick}
       className={`font-silk inline-flex items-center gap-2 px-6 py-3 text-xs sm:text-sm tracking-wide border-[3px] ${variants[variant]}
       shadow-[4px_4px_0_0_#000] active:shadow-[1px_1px_0_0_#000] active:translate-x-0.75 active:translate-y-0.75
       transition-all duration-100 ${className}`}
@@ -100,13 +109,43 @@ const PixelBadgeIcon = ({
   </div>
 );
 
+/* A big, unmissable pair of "who are you" buttons. Icon + color + short
+   word — no reading comprehension required to find the right door. */
+const LoginChooser = ({
+  className = "",
+  size = "default",
+}: {
+  className?: string;
+  size?: "default" | "large";
+}) => {
+  const navigate = useNavigate();
+  const big = size === "large";
+  return (
+    <div className={`flex flex-wrap gap-4 ${className}`}>
+      <PixelButton
+        variant="leaf"
+        icon={<Gamepad2 className={big ? "w-6 h-6" : "w-4 h-4"} />}
+        className={big ? "!text-base !px-8 !py-5" : ""}
+        onClick={() => navigate("/student/login")}
+      >
+        I'M A STUDENT
+      </PixelButton>
+      <PixelButton
+        variant="gold"
+        icon={<BookOpen className={big ? "w-6 h-6" : "w-4 h-4"} />}
+        className={big ? "!text-base !px-8 !py-5" : ""}
+        onClick={() => navigate("/teacher/login")}
+      >
+        I'M A TEACHER
+      </PixelButton>
+    </div>
+  );
+};
+
 function Navbar() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const handleTeacherLogin = () => {
-    navigate("/teacher/login");
-  }
-  const links = ["Quests", "For Teachers", "AI Tools", "Leaderboard", "Pricing"];
+  const links = ["Quests", "For Teachers", "AI Tools", "Leaderboard"];
   return (
     <header className="sticky top-0 z-50 bg-[#0d2818] border-b-[3px] border-black">
       <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
@@ -132,12 +171,21 @@ function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <button className="font-silk text-[11px] text-[#dff2e1] hover:text-[#f5c542] px-2"
-            onClick={handleTeacherLogin}>
-            Log in
-          </button>
-          <PixelButton variant="gold" className="px-4! py-2! text-[10px]!">
-            Start Free
+          <PixelButton
+            variant="leaf"
+            icon={<Gamepad2 className="w-4 h-4" />}
+            className="!px-4 !py-2 !text-[10px]"
+            onClick={() => navigate("/student/login")}
+          >
+            Student Login
+          </PixelButton>
+          <PixelButton
+            variant="gold"
+            icon={<BookOpen className="w-4 h-4" />}
+            className="!px-4 !py-2 !text-[10px]"
+            onClick={() => navigate("/teacher/login")}
+          >
+            Teacher Login
           </PixelButton>
         </div>
 
@@ -157,9 +205,24 @@ function Navbar() {
               {l}
             </a>
           ))}
-          <PixelButton variant="gold" className="!text-[10px] w-full justify-center">
-            Start Free
-          </PixelButton>
+          <div className="flex flex-col gap-3 pt-2">
+            <PixelButton
+              variant="leaf"
+              icon={<Gamepad2 className="w-4 h-4" />}
+              className="!text-[10px] w-full justify-center"
+              onClick={() => navigate("/student/login")}
+            >
+              Student Login
+            </PixelButton>
+            <PixelButton
+              variant="gold"
+              icon={<BookOpen className="w-4 h-4" />}
+              className="!text-[10px] w-full justify-center"
+              onClick={() => navigate("/teacher/login")}
+            >
+              Teacher Login
+            </PixelButton>
+          </div>
         </div>
       )}
     </header>
@@ -209,26 +272,10 @@ function Hero() {
             for every problem they clear.
           </p>
 
-          <div className="flex flex-wrap gap-4 mt-8">
-            <PixelButton variant="gold" icon={<Play className="w-4 h-4" />}>
-              Start the Expedition
-            </PixelButton>
-            <PixelButton variant="dark" icon={<ChevronRight className="w-4 h-4" />}>
-              Teacher Demo
-            </PixelButton>
-          </div>
-
-          <div className="flex items-center gap-6 mt-10">
-            {[
-              { icon: <Users className="w-4 h-4" />, label: "40K+ Explorers" },
-              { icon: <Trophy className="w-4 h-4" />, label: "1.2M Quests Cleared" },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center gap-2 text-[#dff2e1]">
-                {s.icon}
-                <span className="font-silk text-[10px]">{s.label}</span>
-              </div>
-            ))}
-          </div>
+          <p className="font-silk text-[9px] text-[#8fbf9a] tracking-widest mt-8 mb-3">
+            &gt; PICK YOUR CHARACTER TO BEGIN
+          </p>
+          <LoginChooser size="large" />
         </div>
 
         {/* pixel scene: floating quiz card + creatures */}
@@ -494,12 +541,10 @@ function CTABanner() {
           <br /> TREASURE CHEST?
         </h2>
         <p className="font-body text-[#c9e4cf] text-base max-w-md mx-auto mb-8">
-          Free for individual classrooms. No credit card, no room codes,
-          no setup longer than a recess.
+          Jump back into your classroom. Pick the door that's yours below.
         </p>
-        <div className="flex justify-center gap-4 flex-wrap">
-          <PixelButton variant="gold">Create Your Classroom</PixelButton>
-          <PixelButton variant="dark">Talk to Sales</PixelButton>
+        <div className="flex justify-center">
+          <LoginChooser size="large" />
         </div>
       </div>
     </section>
@@ -507,6 +552,7 @@ function CTABanner() {
 }
 
 function Footer() {
+  const navigate = useNavigate();
   return (
     <footer className="bg-[#0a2015] border-t-[3px] border-black py-10">
       <div className="max-w-6xl mx-auto px-5 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -519,12 +565,18 @@ function Footer() {
         <p className="font-silk text-[9px] text-[#8fbf9a] text-center">
           © {new Date().getFullYear()} ELEMATH. BUILT FOR EXPLORERS GRADE 1–6.
         </p>
-        <div className="flex gap-5">
+        <div className="flex items-center gap-5">
           {["Privacy", "Terms", "Contact"].map((l) => (
             <a key={l} href="#" className="font-silk text-[9px] text-[#dff2e1] hover:text-[#f5c542]">
               {l}
             </a>
           ))}
+          <button
+            className="font-silk text-[9px] text-[#f5c542] hover:text-[#ffd75e] inline-flex items-center gap-1"
+            onClick={() => navigate("/teacher/login")}
+          >
+            Teacher Login <ChevronRight className="w-3 h-3" />
+          </button>
         </div>
       </div>
     </footer>

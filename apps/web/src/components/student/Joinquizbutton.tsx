@@ -5,7 +5,7 @@ import type { ActiveQuizSession, JoinQuizResponse } from "@repo/types";
 
 interface JoinQuizButtonProps {
   classId: string;
-  onJoin: (session: ActiveQuizSession) => void; // e.g. navigate to the lobby + connect the socket
+  onJoin: () => void; // e.g. navigate to the lobby + connect the socket
 }
 
 export default function JoinQuizButton({ classId, onJoin }: JoinQuizButtonProps) {
@@ -13,6 +13,7 @@ export default function JoinQuizButton({ classId, onJoin }: JoinQuizButtonProps)
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleJoin() {
+    console.log(`Checking for an active quiz session for classId: ${classId}`);
     setIsChecking(true);
     setMessage(null);
     if (!classId) {
@@ -21,15 +22,9 @@ export default function JoinQuizButton({ classId, onJoin }: JoinQuizButtonProps)
       return;
     }
     try {
-      // const res = await axios.get<JoinQuizResponse>(`/classes/${classId}/active-quiz`);
-      // const data = res.data;
-      const data: JoinQuizResponse = { hasActiveQuiz: false }; // placeholder until the endpoint exists
 
-      if (data.hasActiveQuiz && data.session) {
-        onJoin(data.session);
-      } else {
-        setMessage("No live quiz right now — check back once your teacher starts one.");
-      }
+        onJoin();
+
     } catch (err) {
       console.error("Failed to check for an active quiz", err);
       setMessage("Couldn't reach the server. Try again.");

@@ -4,16 +4,25 @@ import PixelCard from "../../components/student/PixelCard";
 import JungleTrail from "../../components/student/JungleTrail";
 import RecentAdventures from "../../components/student/RecentAdventures";
 import JoinQuizButton from "../../components/student/Joinquizbutton";
-import type{ ActiveQuizSession, StudentDashboardData } from "@repo/types";
+import type { StudentDashboardData } from "@repo/types";
+import { isGameSessionExist } from "../../api/studentsApi";
+import { useEffect } from "react";
 
 interface StudentDashboardProps {
   data: StudentDashboardData | null; // pass your API response here
   isLoading?: boolean;
   onContinueQuest?: () => void; // fires when the "Continue Quest" button is pressed
-  onJoinQuiz?: (session: ActiveQuizSession) => void; // fires when a live quiz is found
+  onJoinQuiz?: () => void; // fires when a live quiz is found
+  onLogout?: () => void; // fires when the header's logout button is pressed
 }
 
-export default function StudentDashboard({ data, isLoading, onContinueQuest, onJoinQuiz }: StudentDashboardProps) {
+export default function StudentDashboard({
+  data,
+  isLoading,
+  onContinueQuest,
+  onJoinQuiz,
+  onLogout,
+}: StudentDashboardProps) {
   if (isLoading || !data) {
     return (
       <div className="min-h-screen w-full bg-[#F2FBF3] flex items-center justify-center">
@@ -21,6 +30,22 @@ export default function StudentDashboard({ data, isLoading, onContinueQuest, onJ
       </div>
     );
   }
+
+  const handleCheckGameSession = async () => {
+    try {
+      const response = await isGameSessionExist();
+      console.log(`Game session check result:`, response);
+      if (response.exists && onJoinQuiz) {
+        onJoinQuiz();
+      }
+    } catch (error) {
+      console.error("Failed to check game session", error);
+    }
+  };
+
+  useEffect(() => {
+    handleCheckGameSession();
+  }, []);
 
   const { studentName, streakDays, analytics, trail, recentAttempts } = data;
 
@@ -37,7 +62,12 @@ export default function StudentDashboard({ data, isLoading, onContinueQuest, onJ
         @keyframes leaf-drift { 0% { transform: translateY(0) rotate(0deg); opacity: 0.5; } 100% { transform: translateY(120px) rotate(40deg); opacity: 0; } }
       `}</style>
 
-      <DashboardHeader studentName={studentName} streakDays={streakDays} analytics={analytics} />
+      <DashboardHeader
+        studentName={studentName}
+        streakDays={streakDays}
+        analytics={analytics}
+        onLogout={onLogout}
+      />
 
       <div className="max-w-4xl mx-auto px-5 py-8 space-y-10">
         {trail[0] && onJoinQuiz && (

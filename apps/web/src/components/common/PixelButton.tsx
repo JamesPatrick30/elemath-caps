@@ -1,33 +1,36 @@
-import type { ReactNode, ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes } from "react";
+import { accentHex, notch } from "../../lib/pixel";
 
-type ButtonVariant = "leaf" | "sky" | "gold" | "ghost";
+type Variant = "gold" | "leaf" | "sky" | "ember" | "ghost";
 
-const VARIANTS: Record<ButtonVariant, string> = {
-  leaf: "bg-leaf-500 hover:bg-leaf-400 text-canopy-950",
-  sky: "bg-sky-400 hover:bg-sky-300 text-canopy-950",
-  gold: "bg-gold-400 hover:bg-gold-300 text-canopy-950",
-  ghost:
-    "bg-transparent hover:bg-canopy-700 text-parchment-100 border-[2px] border-bark-700",
-};
-
-interface PixelButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
-  children: ReactNode;
-  variant?: ButtonVariant;
+interface PixelButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variant;
 }
 
+const TEXT_ON_FILL = "#173404";
+
 export default function PixelButton({
-  children,
-  variant = "leaf",
+  variant = "gold",
   className = "",
-  type = "button",
+  children,
   ...rest
 }: PixelButtonProps) {
+  if (variant === "ghost") {
+    return (
+      <button
+        {...rest}
+        className={`font-body text-xs font-semibold px-4 py-2 text-parchment-300 hover:text-parchment-100 transition-colors disabled:opacity-50 ${className}`}
+      >
+        {children}
+      </button>
+    );
+  }
+
   return (
     <button
-      type={type}
-      className={`px-3 py-2 font-pixel text-[9px] uppercase tracking-wide shadow-[0_3px_0_rgba(0,0,0,0.4)] active:translate-y-0.5 active:shadow-none transition-all ${VARIANTS[variant]} ${className}`}
       {...rest}
+      style={{ ...notch(4), background: accentHex(variant), color: TEXT_ON_FILL }}
+      className={`font-body text-xs font-bold px-4 py-2 transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 ${className}`}
     >
       {children}
     </button>

@@ -1,67 +1,45 @@
-import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, School, BarChart3, Settings, TreePine } from "lucide-react";
+import { LayoutDashboard, Trees, Users, ClipboardList, BarChart3, Settings } from "lucide-react";
 import type { NavKey } from "../../types";
-import { useNavigate } from "react-router-dom";
-interface NavItem {
-  key: NavKey;
-  label: string;
-  icon: LucideIcon;
-  url?: string;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, url: "/teacher" },
-  { key: "classes", label: "Classes", icon: School, url: "/teacher/classes" },
-  { key: "analytics", label: "Analytics", icon: BarChart3 },
-  { key: "settings", label: "Settings", icon: Settings },
-];
+import { notch } from "../../lib/pixel";
 
 interface SidebarProps {
   active?: NavKey;
   onNavigate?: (key: NavKey) => void;
 }
 
-export default function Sidebar({ active = "dashboard", onNavigate }: SidebarProps) {
-  const navigate = useNavigate();
+const NAV_ITEMS: { key: NavKey; label: string; icon: typeof Trees }[] = [
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { key: "classes", label: "Classes", icon: Trees },
+  { key: "students", label: "Students", icon: Users },
+  { key: "quizzes", label: "Quizzes", icon: ClipboardList },
+  { key: "analytics", label: "Analytics", icon: BarChart3 },
+  { key: "settings", label: "Settings", icon: Settings },
+];
 
-  const handleNavigate = (key: NavKey, url?: string) => {
-    onNavigate?.(key);
-    if (url) {
-      navigate(url);
-    }
-  };
+export default function Sidebar({ active, onNavigate }: SidebarProps) {
   return (
-    <aside className="hidden md:flex md:flex-col w-56 shrink-0 bg-canopy-900 border-r-[3px] border-bark-700/70">
-      <div className="flex items-center gap-2 px-4 py-5 border-b-[3px] border-bark-700/60">
-        <TreePine className="w-5 h-5 text-leaf-500" />
-        <span className="font-pixel text-[10px] text-parchment-100 tracking-wide">
-          ELEMATH
-        </span>
+    <aside className="w-20 md:w-56 flex flex-col py-6 px-3 gap-1 bg-bark-900 border-r-4 border-canopy-900">
+      <div className="flex items-center gap-2 px-2 mb-8">
+        <Trees size={20} className="text-leaf-400" />
+        <span className="font-pixel text-[10px] text-gold-400 hidden md:inline">ELEMATH</span>
       </div>
 
-      <nav className="flex-1 py-4 px-2 space-y-1">
-        {NAV_ITEMS.map(({ key, label, icon: Icon, url }) => {
-          const isActive = active === key;
-          return (
-            <button
-              key={key}
-              onClick={() => handleNavigate(key, url)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 text-left font-body text-sm transition-colors ${
-                isActive
-                  ? "bg-canopy-700 text-parchment-100 border-l-[3px] border-leaf-500"
-                  : "text-parchment-300 hover:bg-canopy-800 hover:text-parchment-100 border-l-[3px] border-transparent"
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-            </button>
-          );
-        })}
-      </nav>
-
-      <div className="px-4 py-4 border-t-[3px] border-bark-700/60 font-data text-[10px] text-parchment-500">
-        v2.0 · teacher build
-      </div>
+      {NAV_ITEMS.map((item) => {
+        const isActive = active === item.key;
+        return (
+          <button
+            key={item.key}
+            onClick={() => onNavigate?.(item.key)}
+            style={{ ...notch(6), background: isActive ? "#6fcf67" : "transparent" }}
+            className={`flex items-center gap-3 px-3 py-2.5 mb-1 font-body text-xs font-semibold transition-colors ${
+              isActive ? "text-canopy-950" : "text-parchment-300 hover:text-parchment-100"
+            }`}
+          >
+            <item.icon size={16} strokeWidth={2.25} />
+            <span className="hidden md:inline">{item.label}</span>
+          </button>
+        );
+      })}
     </aside>
   );
 }

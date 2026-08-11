@@ -1,14 +1,6 @@
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
-import PixelPanel from "../common/PixelPanel";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { TrendPoint } from "../../types";
+import PixelPanel from "../common/PixelPanel";
 
 interface PerformanceChartProps {
   data: TrendPoint[];
@@ -16,40 +8,33 @@ interface PerformanceChartProps {
 
 export default function PerformanceChart({ data }: PerformanceChartProps) {
   return (
-    <PixelPanel accent="sky" title="Average Score Trend">
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-            <CartesianGrid stroke="#294634" strokeDasharray="4 4" />
-            <XAxis
-              dataKey="label"
-              stroke="#a89b74"
-              tick={{ fontFamily: "JetBrains Mono", fontSize: 11 }}
-            />
-            <YAxis
-              stroke="#a89b74"
-              tick={{ fontFamily: "JetBrains Mono", fontSize: 11 }}
-              domain={[0, 100]}
-            />
-            <Tooltip
-              contentStyle={{
-                background: "#1f3626",
-                border: "2px solid #4a3423",
-                fontFamily: "JetBrains Mono",
-                fontSize: 12,
-                color: "#f3ecd2",
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="avgScore"
-              stroke="#7ecbe8"
-              strokeWidth={2}
-              dot={{ fill: "#7ecbe8", r: 3 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+    <PixelPanel accent="sky">
+      <p className="font-pixel text-[10px] text-parchment-500 uppercase mb-4">Class average trend</p>
+
+      {data.length === 0 ? (
+        <p className="font-body text-sm text-parchment-300">No quiz attempts yet.</p>
+      ) : (
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+              <CartesianGrid stroke="#2a4a33" strokeDasharray="3 3" />
+              <XAxis dataKey="label" stroke="#8fae8f" fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke="#8fae8f" fontSize={10} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={{ background: "#16351f", border: "2px solid #6fcf67", fontSize: 12 }}
+                labelStyle={{ color: "#f2c14e" }}
+              />
+              <Line
+                type="monotone"
+                dataKey="averageScore"
+                stroke="#6fcf67"
+                strokeWidth={3}
+                dot={{ r: 3, fill: "#6fcf67" }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </PixelPanel>
   );
 }

@@ -1,72 +1,47 @@
-import { useState } from "react";
-import { Search, ChevronDown, LogOut, User } from "lucide-react";
 import type { Teacher } from "../../types";
-import { logout } from "../../api/auth";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { notch } from "../../lib/pixel";
+
 interface TopBarProps {
   breadcrumbs?: string[];
   teacher?: Teacher;
 }
 
-export default function TopBar({ breadcrumbs = ["Dashboard"], teacher }: TopBarProps) {
-    const [menuOpen, setMenuOpen] = useState(false);
+export default function TopBar({ breadcrumbs = [], teacher }: TopBarProps) {
+  const initials = teacher?.name
+    ? teacher.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "TG";
 
-    const { logout } = useAuth();
-
-    const navigate = useNavigate();
-    const handleLogout = async () => {
-        setMenuOpen(false);
-        await logout();
-        navigate("/teacher/login", { replace: true });
-    }
   return (
-    <header className="flex items-center justify-between gap-4 px-6 py-4 border-b-[3px] border-bark-700/70">
-      <div className="flex items-center gap-2 font-pixel text-[9px] uppercase tracking-wider text-green-700">
-        {breadcrumbs.map((crumb, i) => (
+    <header className="flex items-center justify-between px-6 py-4 bg-canopy-900 border-b-4 border-bark-800">
+      <div className="flex items-center gap-2 font-pixel text-[10px]">
+        <span className="text-parchment-500 uppercase">Camp</span>
+        {breadcrumbs.map((crumb) => (
           <span key={crumb} className="flex items-center gap-2">
-            {i > 0 && <span className="text-bark-600">/</span>}
-            <span className={i === breadcrumbs.length - 1 ? "text-green-500" : ""}>
-              {crumb}
-            </span>
+            <span className="text-bark-700">/</span>
+            <span className="text-gold-400 uppercase">{crumb}</span>
           </span>
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="hidden sm:flex items-center gap-2 border-2 border-bark-700/60 px-3 py-1.5">
-          <Search className="w-4 h-4 text-parchment-500" />
-          <input
-            type="text"
-            placeholder="Search students, classes..."
-            className="bg-transparent outline-none font-body text-sm text-parchment-100 placeholder:text-parchment-500 w-48"
-          />
+      <div className="flex items-center gap-3">
+        <div
+          style={{ ...notch(6), background: "#ff7fb0" }}
+          className="w-9 h-9 flex items-center justify-center font-body text-xs font-bold text-[#4b1528]"
+        >
+          {initials}
         </div>
-
-        <div className="relative">
-          <button
-            onClick={() => setMenuOpen((o) => !o)}
-            className="flex items-center gap-2 px-2 py-1.5 hover:bg-canopy-800 transition-colors"
-          >
-            <div className="w-8 h-8 bg-leaf-500 flex items-center justify-center text-canopy-950">
-              <User className="w-4 h-4" />
-            </div>
-            <span className="font-body text-sm text-parchment-100 hidden sm:inline">
-              {teacher?.name || "Teacher"}
-            </span>
-            <ChevronDown className="w-4 h-4 text-parchment-500" />
-          </button>
-
-          {menuOpen && (
-            <div className="absolute right-0 mt-2 w-44 bg-canopy-800 border-[2px] border-bark-700/70 shadow-[0_4px_0_rgba(0,0,0,0.4)] z-10">
-              <button className="w-full flex items-center gap-2 px-3 py-2 text-left font-body text-sm text-parchment-100 hover:bg-canopy-700">
-                <User className="w-4 h-4" /> Profile
-              </button>
-              <button className="w-full flex items-center gap-2 px-3 py-2 text-left font-body text-sm text-ember-400 hover:bg-canopy-700" onClick={handleLogout}>
-                <LogOut className="w-4 h-4" /> Log out
-              </button>
-            </div>
-          )}
+        <div className="hidden sm:block">
+          <p className="font-body text-sm font-semibold text-parchment-100 leading-tight">
+            {teacher?.name ?? "Trail Guide"}
+          </p>
+          <p className="font-body text-[10px] text-parchment-500 leading-tight">
+            {teacher?.email ?? ""}
+          </p>
         </div>
       </div>
     </header>
