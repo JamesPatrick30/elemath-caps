@@ -116,9 +116,23 @@ export class StudentsService {
             throw new NotFoundException('Student not found');
         }
 
+        if (updatedData.password) {
+            const HashedPassword = await this.sharedService.hashPassword(updatedData.password);
+            await this.prismaService.client().students.update({
+                where: { id: studentId },
+                data: { ...updatedData, password: HashedPassword },
+            });
+
+            return { message: 'Student updated successfully' };
+
+        }
+
         await this.prismaService.client().students.update({
             where: { id: studentId },
-            data: updatedData,
+            data: { 
+                email: updatedData.email,
+                name: updatedData.name,
+             },
         });
 
         const cacheKey = this.keyForUserStudents(teacherId);
