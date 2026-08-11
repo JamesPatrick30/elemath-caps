@@ -14,7 +14,7 @@ export interface addQuestionsToSessionRequest {
 
 export interface quizSession {
     classId: string;
-    students: { id: string; name: string; isInGame: boolean }[];
+    students: { id: string; name: string; isInGame: boolean; joinedAt: number | null }[];
     createdAt: string;
     status: 'active' | 'inactive';
     isStarted: boolean;
