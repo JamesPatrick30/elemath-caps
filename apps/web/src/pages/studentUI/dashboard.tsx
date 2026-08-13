@@ -7,7 +7,6 @@ import JoinQuizButton from "../../components/student/Joinquizbutton";
 import type { StudentDashboardData } from "@repo/types";
 import { isGameSessionExist } from "../../api/studentsApi";
 import { useEffect } from "react";
-
 interface StudentDashboardProps {
   data: StudentDashboardData | null; // pass your API response here
   isLoading?: boolean;
