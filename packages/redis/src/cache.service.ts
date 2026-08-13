@@ -1,13 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import Redis from "ioredis";
-import { REDIS } from "../redis/redis.provider";
+import { REDIS } from "./redis.provider";
 
 @Injectable()
 export class CacheService {
-    constructor(
-        @Inject(REDIS)
-        private readonly redis: Redis,
-    ) {}
+    constructor(@Inject(REDIS) private readonly redis: Redis) {}
 
     async get<T>(key: string): Promise<T | null> {
         const value = await this.redis.get(key);
@@ -21,15 +18,24 @@ export class CacheService {
 
     async set(
         key: string,
-        value: unknown,
+        value: string,
         ttlSeconds = 300,
     ): Promise<void> {
-        await this.redis.set(
-        key,
-        JSON.stringify(value),
-        "EX",
-        ttlSeconds,
-        );
+        try {
+            
+            await this.redis.set(
+            key,
+            value,
+            "EX",
+            ttlSeconds,
+            );
+        } catch (error) {
+            console.error(`Error setting key ${key} in Redis:`, error);
+        }
+    }
+
+    async setGameData(key: string, value: string, ttlSeconds = 3600): Promise<void> { // Custom method for game data that expired on 1 hour
+        await this.set(key, value, ttlSeconds);
     }
 
     async hset(key: string, field: string, value: unknown): Promise<void> {

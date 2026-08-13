@@ -8,7 +8,7 @@ import { StudentsModule } from './students/students.module';
 import { AuthModule } from './auth/auth.module';
 import { SharedService } from './shared/shared.service';
 import { ClassModule } from './class/class.module';
-import { RedisModule } from './redis/redis.module';
+import { RedisModule } from '@repo/redis';
 import { BullModule } from '@nestjs/bullmq';
 import { PdfModule } from './pdf/pdf.module';
 import { GameModule } from './game/game.module';

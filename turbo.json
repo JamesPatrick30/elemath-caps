@@ -13,9 +13,18 @@
     "check-types": {
       "dependsOn": ["^check-types"]
     },
+    "build:redis": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
+    },
     "dev": {
+      "dependsOn": ["^build:redis", "^db:generate"],
       "cache": false,
       "persistent": true
+    },
+    "db:generate": {
+      "cache": false
     }
   }
 }

@@ -30,6 +30,7 @@
     "@nestjs/platform-socket.io": "^11.1.28",
     "@nestjs/websockets": "^11.1.28",
     "@repo/db": "workspace:*",
+    "@repo/redis": "workspace:*",
     "@repo/types": "workspace:*",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.81.2",
