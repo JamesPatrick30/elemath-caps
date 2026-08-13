@@ -5,9 +5,9 @@ import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { workerQueueDataFile } from '@repo/types';
-import {RedisPubSubService} from '../redis/pubsub.service';
+import {RedisPubSubService} from '@repo/redis';
 import type { uploadTask } from '@repo/types';
-import { CacheService } from '../redis/cache.service';
+import { CacheService } from '@repo/redis';
 import { SocketEvents } from '../types/socketEvents';
 
 @Injectable()
