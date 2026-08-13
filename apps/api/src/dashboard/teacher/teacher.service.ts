@@ -7,7 +7,7 @@ import type {
   TrendPointResponse,
   DashboardStatsResponse,
 } from '@repo/types';
-import { CacheService } from '../../redis/cache.service';
+import { CacheService } from '@repo/redis';
 @Injectable()
 export class TeacherService {
   constructor(private readonly prismaService: PrismaService, private readonly cacheService: CacheService) {}

@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../redis/cache.service';
+import { CacheService } from '@repo/redis';
 import { SharedService } from '../shared/shared.service';
 @Injectable()
 export class StudentsService {
@@ -47,7 +47,7 @@ export class StudentsService {
             students: classroom.students.filter((student) => student.isActive),
         }));
 
-        await this.cache.set(cacheKey, filteredStudents);
+        await this.cache.set(cacheKey, JSON.stringify(filteredStudents));
 
         return filteredStudents;
     }

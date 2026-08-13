@@ -5,7 +5,7 @@ import { TeacherController } from './teacher/teacher.controller';
 import { TeacherService } from './teacher/teacher.service';
 import { AuthModule } from '../auth/auth.module';
 import { PrismaModule } from '../prisma/prisma.module';
-import { RedisModule } from '../redis/redis.module';
+import { RedisModule } from '@repo/redis';
 @Module({
   imports: [AuthModule, PrismaModule, RedisModule],
   providers: [StudentService, TeacherService],

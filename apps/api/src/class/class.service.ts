@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../redis/cache.service';
+import { CacheService } from '@repo/redis';
 @Injectable()
 export class ClassService {
     constructor(private readonly prismaService: PrismaService, private readonly cache: CacheService  ) {}
@@ -12,7 +12,7 @@ export class ClassService {
         const oldCachedData = await this.cache.get<T[]>(key);
         if (oldCachedData) {
         const updatedData = [...oldCachedData, ...newData];
-        await this.cache.set(key, updatedData);
+        await this.cache.set(key, JSON.stringify(updatedData));
         }
     }
 
@@ -20,7 +20,7 @@ export class ClassService {
         const oldCachedClasses = await this.cache.get<any[]>(hey);
         if (oldCachedClasses) {
             const updatedClasses = [...oldCachedClasses, ...data];
-            await this.cache.set(hey, updatedClasses);
+            await this.cache.set(hey, JSON.stringify(updatedClasses));
         }
     }
     async getUserClasses(userId?: string | undefined): Promise<any[]> {
@@ -40,7 +40,7 @@ export class ClassService {
             where: { teacherId: userId, isActive: true },
         });
 
-        await this.cache.set(cacheKey, classes);
+        await this.cache.set(cacheKey, JSON.stringify(classes));
 
         return classes;
     }

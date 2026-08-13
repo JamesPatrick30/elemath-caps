@@ -3,7 +3,7 @@ import { StudentsService } from './students.service';
 import { StudentsController } from './students.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
-import { RedisModule } from '../redis/redis.module';
+import { RedisModule } from '@repo/redis';
 import { SharedService } from '../shared/shared.service';
 @Module({
   providers: [StudentsService, SharedService],

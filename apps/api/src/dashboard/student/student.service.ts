@@ -6,7 +6,7 @@ import {
   StudentDashboardData,
   TrailQuiz,
 } from '@repo/types';
-import { CacheService } from '../../redis/cache.service';
+import { CacheService } from '@repo/redis';
 @Injectable()
 export class StudentService {
     constructor(private readonly prisma: PrismaService, private readonly cacheService: CacheService) {}
@@ -122,7 +122,7 @@ export class StudentService {
             })),
         };
 
-        await this.cacheService.set(cacheKey, dashboardData, 60); // Cache for 60 seconds
+        await this.cacheService.set(cacheKey, JSON.stringify(dashboardData), 60); // Cache for 60 seconds
 
         return dashboardData;
     }
