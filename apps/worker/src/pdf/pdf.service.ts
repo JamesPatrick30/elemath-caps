@@ -8,7 +8,8 @@ import { workerQueueDataFile } from '@repo/types';
 import {RedisPubSubService} from '@repo/redis';
 import type { uploadTask } from '@repo/types';
 import { CacheService } from '@repo/redis';
-import { SocketEvents } from '../types/socketEvents';
+import { pubsubEvents } from '../types/pubsubEvents';
+import { QueueNames } from '../types/queue';
 
 @Injectable()
 export class PdfService {
@@ -33,52 +34,50 @@ export class PdfService {
         // Read the uploaded PDF
         const buffer = await fs.readFile(data.path);
 
-        let userSocketId = await this.cacheService.get(`socket:${data.userId}`); 
-        this.redisPubSubService.publish('pdf-generated', { status: 'PDF processed successfully', id: userSocketId, isDone: false } as uploadTask);
+        let userSocketId: { id: string } | null = await this.cacheService.get(`socket:${data.userId}`); 
+        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'PDF processed successfully', id: userSocketId?.id, isDone: false } as uploadTask);
         // Extract text
         const result = await pdfParse(buffer);
 
         let questions;
         let summary;
         try{
-            summary = await this.AiSummarizerCall(`Summarize the following text: ${result.text}`);
+            // summary = await this.AiSummarizerCall(`Summarize the following text: ${result.text}`);
             // delay simulation for testing purposes
-            // await new Promise(resolve => setTimeout(resolve, 5000));
+            await new Promise(resolve => setTimeout(resolve, 5000));
             // summary = "This is a simulated summary of the PDF content.";
 
 
             userSocketId = await this.cacheService.get(`socket:${data.userId}`);
-            this.redisPubSubService.publish('pdf-generated', { status: 'Generating practice questions...', id: userSocketId, isDone: false } as uploadTask);
+            console.log(`Publishing to socket ${userSocketId?.id}: Generating practice questions...`);
+            this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Generating practice questions...', id: userSocketId?.id, isDone: false } as uploadTask);
 
-            questions = await this.AIQuestionGenerator(summary);
+            // questions = await this.AIQuestionGenerator(summary);
+
             // delay simulation for testing purposes
-            // await new Promise(resolve => setTimeout(resolve, 5000));
+            await new Promise(resolve => setTimeout(resolve, 5000));
             // summary = "This is a simulated summary of the PDF content.";
 
         } catch (error) {
             this.logger.error('Error during AI processing:', error);
         }
-        
-        this.logger.log('===== AI RESPONSE =====');
-        console.log(questions);
-        console.log('========================');
-        console.log('===== AI SUMMARY =====');
-        console.log(summary);
-        this.logger.log('========================');
 
-        await this.prismaService.client().lessons.create({
-            data: {
-                classId: data.classId,
-                title: data.originalName,
-                pdfUrl: data.path,
-                questions: JSON.parse(questions),
-                summary: summary,
-            }
-        });
+        // await this.prismaService.client().lessons.create({
+        //     data: {
+        //         classId: data.classId,
+        //         title: data.originalName,
+        //         pdfUrl: data.path,
+        //         questions: JSON.parse(questions),
+        //         summary: summary,
+        //     }
+        // });
+
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
 
         userSocketId = await this.cacheService.get(`socket:${data.userId}`);
 
-        this.redisPubSubService.publish('pdf-generated', { status: 'Data saved successfully', id: userSocketId, isDone: true } as uploadTask);
+        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Data saved successfully', id: userSocketId?.id, isDone: false } as uploadTask);
 
         } catch (error) {
         this.logger.error('Failed to process PDF', error);
@@ -150,5 +149,19 @@ export class PdfService {
         });
 
         return response.choices[0].message.content;
+    }
+
+    async onFailed(data: any, error: any) {
+        const userSocketId: { id: string } | null = await this.cacheService.get(`socket:${data.userId}`);
+        console.error(`Job failed for user ${data.userId} with error:`, error);
+        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Failed', id: userSocketId?.id, isDone: true } as uploadTask);
+
+    }
+
+    async onCompleted(data: any, returnvalue: any) {
+        const userSocketId: { id: string } | null = await this.cacheService.get(`socket:${data.userId}`);
+
+        console.log(`Job completed for user ${data.userId} with result:`, returnvalue);
+        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Completed', id: userSocketId?.id, isDone: true } as uploadTask);
     }
 }

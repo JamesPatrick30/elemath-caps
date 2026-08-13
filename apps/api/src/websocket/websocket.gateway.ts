@@ -2,28 +2,58 @@ import {
   WebSocketGateway,
   OnGatewayInit,
   SubscribeMessage,
+  WebSocketServer,
 } from '@nestjs/websockets';
+
+import { OnModuleInit } from '@nestjs/common';
 
 import { Server, Socket } from 'socket.io';
 
+import { CacheService } from '@repo/redis';
 import { WebsocketService } from './websocket.service';
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
 import { SharedService } from '../shared/shared.service';
 import { SocketEvents } from '../types/socketEvents';
 import { UnauthorizedException } from '@nestjs/common';
+import { RedisPubSubService } from '@repo/redis';
+import { pubsubEvents } from '../types/pubsubEvents';
 @WebSocketGateway({
   cors: {
     origin: 'http://localhost:5173',
     credentials: true,
   },
 })
-export class WebsocketGateway implements OnGatewayInit {
+export class WebsocketGateway implements OnGatewayInit, OnModuleInit {
   constructor(
     private readonly websocketService: WebsocketService,
     private readonly jwtService: JwtService,
     private readonly sharedService: SharedService,
+    private readonly redisPubSubService: RedisPubSubService,
+    private readonly cacheService: CacheService,
   ) {}
 
+  @WebSocketServer()
+  server!: Server;
+
+  onModuleInit() {
+    this.redisPubSubService.subscribe(pubsubEvents.FILE_UPLOAD, (payload: any) => {
+      const  { status, id, isDone } = payload;
+      console.log(`Publishing to socket ${id}:`, { status, isDone });
+      this.server.to(id).emit(SocketEvents.PDF_UPLOADED, {
+        status,
+        isDone,
+      });
+    });
+
+    this.redisPubSubService.subscribe(pubsubEvents.SOCKET_EVENT, (payload: any) => {
+      const { event, payload: eventPayload, room } = payload;
+      if (room) {
+        this.server.to(room).emit(event, eventPayload);
+      } else {
+        this.server.emit(event, eventPayload);
+      }
+    });
+  }
   afterInit(server: Server) {
     this.websocketService.setServer(server);
 
@@ -70,6 +100,7 @@ export class WebsocketGateway implements OnGatewayInit {
   
       // Attach authenticated user to socket
       socket.data.user = user;
+      await this.cacheService.set(`socket:${user.sub}`, JSON.stringify({id:socket.id}), 60 * 60); // Cache for 1 hour
     }catch(error){
       // socket.disconnect(true);
       throw new UnauthorizedException('Token verification failed');
@@ -78,8 +109,6 @@ export class WebsocketGateway implements OnGatewayInit {
 
   handleConnection(socket: Socket) {
     const user = socket.data.user;
-
-
   }
 
 
@@ -128,4 +157,6 @@ export class WebsocketGateway implements OnGatewayInit {
     socket.join(roomKey);
 
   }
+
+
 }
