@@ -1,64 +1,131 @@
-import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { JwtService } from '@nestjs/jwt';
-import { CacheService } from '../redis/cache.service';
-import { CookieNames } from '../types/cookie';
+import {
+  WebSocketGateway,
+  OnGatewayInit,
+  SubscribeMessage,
+} from '@nestjs/websockets';
 
+import { Server, Socket } from 'socket.io';
+
+import { WebsocketService } from './websocket.service';
+import { JwtService } from '@nestjs/jwt';
+import { SharedService } from '../shared/shared.service';
+import { SocketEvents } from '../types/socketEvents';
+import { UnauthorizedException } from '@nestjs/common';
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: 'http://localhost:5173',
     credentials: true,
   },
 })
-export class WebsocketGateway {
-  constructor(private readonly jwtService: JwtService, private readonly cacheService: CacheService) {}
-  @WebSocketServer()
-  server!: Server;
+export class WebsocketGateway implements OnGatewayInit {
+  constructor(
+    private readonly websocketService: WebsocketService,
+    private readonly jwtService: JwtService,
+    private readonly sharedService: SharedService,
+  ) {}
 
-  private getToken(cookie?: string): string | null {
-    if (!cookie) return null;
+  afterInit(server: Server) {
+    this.websocketService.setServer(server);
 
-    const cookies = cookie.split(';');
+    server.use(async (socket, next) => {
+      try {
+        await this.authenticate(socket);
 
-    for (const c of cookies) {
-        const [key, value] = c.trim().split('=');
+        next();
+      } catch (error) {
+        next(new Error('Unauthorized'));
+      }
+    });
+  }
 
-        if (key === CookieNames.accessToken) {
-            return value;
-        }
+  private async authenticate(socket: Socket) {
+    const cookieHeader = socket.handshake.headers.cookie;
+
+    if (!cookieHeader) {
+      throw new UnauthorizedException('No cookies provided');
     }
 
-    return null;
-}
+    const token = this.extractAccessToken(cookieHeader);
 
-  async handleConnection(client: Socket) {
-    try {
-        const token = this.getToken(client.handshake.headers.cookie);
+    if (!token) {
+      throw new UnauthorizedException('Access token not found');
+    }
 
-        if (!token) {
-            client.disconnect();
-            return;
-        }
+    try{
 
-        const payload = await this.jwtService.verifyAsync(token,{secret: process.env.ACCESS_JWT_SECRET});
-
-        this.cacheService.set(`socket:${payload.sub}`, client.id, 3600); // Store for 1 hour
-    } catch {
-      client.disconnect();
+      const user =
+        await this.jwtService.verifyAsync(token, {
+          secret: process.env.ACCESS_JWT_SECRET,
+        });
+  
+  
+      if (!user) {
+        throw new UnauthorizedException('Invalid access token');
+      }
+  
+      if (user.role === 'student') {
+        const roomKey = await this.sharedService.joinRoomKey(user.classId);
+        socket.join(roomKey);
+      }
+  
+      // Attach authenticated user to socket
+      socket.data.user = user;
+    }catch(error){
+      // socket.disconnect(true);
+      throw new UnauthorizedException('Token verification failed');
     }
   }
 
-  emit(event: string, data: string, to?: string | null) {
-    if (to) {
-      this.server.to(to).emit(event, data);
-    } else {
-      this.server.emit(event, data);
+  handleConnection(socket: Socket) {
+    const user = socket.data.user;
+
+
+  }
+
+
+
+  private extractAccessToken(
+    cookieHeader: string,
+  ): string | null {
+    const cookies = cookieHeader
+      .split(';')
+      .map((cookie) => cookie.trim());
+
+    const accessTokenCookie = cookies.find(
+      (cookie) =>
+        cookie.startsWith('accessToken='),
+    );
+
+    if (!accessTokenCookie) {
+      return null;
     }
+
+    const seperatedToken = accessTokenCookie.split('=');
+    if (seperatedToken.length !== 2) {
+      return null;
+    }
+    return seperatedToken[1];
   }
 
-  joinRoom(client: Socket, room: string) {
-    client.join(room);
+  @SubscribeMessage(SocketEvents.STUDENT_JOIN)
+  async handleJoinRoom(socket: Socket, data: { roomId: string }) {
+    const user = socket.data.user;
+    const { roomId } = data;
+
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    if (!roomId) {
+      const classId = user.classId;
+      const roomKey = await this.sharedService.joinRoomKey(classId);
+      socket.join(roomKey);
+      return;
+    }
+
+    const roomKey = await this.sharedService.joinRoomKey(roomId);
+    socket.join(roomKey);
+
   }
-
-
 }

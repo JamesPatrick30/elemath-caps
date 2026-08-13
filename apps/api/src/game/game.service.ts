@@ -5,18 +5,19 @@ import { WebsocketService } from '../websocket/websocket.service';
 import { QueueNames } from '../types/queue';
 import { GenerateQuestionsRequest } from '@repo/types';
 import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../redis/cache.service';
+import { CacheService } from '@repo/redis';
 import type { quizSession, createQuizSessionResponse } from "@repo/types";
 import type { addQuestion, getQuestionsResponse } from '../types/game';
 import { SocketEvents } from '../types/socketEvents';
-import { interval } from 'rxjs';
+import { SharedService } from '../shared/shared.service';
 @Injectable()
 export class GameService {
   constructor(
     @InjectQueue(QueueNames.GenerateQuestions) private readonly generateQuestionsQueue: Queue,
     private readonly prismaService: PrismaService,
     private readonly websocketService: WebsocketService,
-    private readonly cacheService: CacheService
+    private readonly cacheService: CacheService,
+    private readonly sharedService: SharedService,
   ) {}
 
   private gameSessionCacheKey(classId: string, type: 'session'| 'questions' ): string {
@@ -76,9 +77,11 @@ export class GameService {
     }
 
     const checkKey = this.gameSessionCheckKey(userId);
-    this.cacheService.set(checkKey, 'true', 3600); // Set expiration to 1 hour (3600 seconds)
-    await this.cacheService.set(key, sessionData, 3600); // Set expiration to 1 hour (3600 seconds)
-    this.websocketService.joinRoom(userId, `class_${classId}`);
+    this.cacheService.setGameData(checkKey, 'true', 3600); // Set expiration to 1 hour (3600 seconds)
+    await this.cacheService.setGameData(key, JSON.stringify(sessionData), 3600); // Set expiration to 1 hour (3600 seconds)
+    const roomKey = await this.sharedService.joinRoomKey(classId);
+    this.websocketService.emit(userId,{role: 'teacher' },roomKey);
+
     return { sessionId: classId, message: `Quiz session for class ID ${classId} has been created.` };
   }
 
@@ -117,7 +120,7 @@ export class GameService {
     const cached = await this.cacheService.get<addQuestion[]>(key);
 
     if (!cached) {
-      await this.cacheService.set(key, JSON.stringify(mappedQuestions));
+      await this.cacheService.setGameData(key, JSON.stringify(mappedQuestions));
       return;
     }
 
@@ -127,7 +130,7 @@ export class GameService {
       ...mappedQuestions,
     ];
 
-    await this.cacheService.set(key, JSON.stringify(updatedQuestions));
+    await this.cacheService.setGameData(key, JSON.stringify(updatedQuestions));
   }
 
   async removeQuestionFromSession(classId: string, questionIds: string[]): Promise<void> {
@@ -140,7 +143,7 @@ export class GameService {
 
     const updatedQuestions = cached.filter(q => !questionIds.includes(q.id));
 
-    await this.cacheService.set(key, JSON.stringify(updatedQuestions));
+    await this.cacheService.setGameData(key, JSON.stringify(updatedQuestions));
   }
 
   async CancelQuizSession(classId: string, userId: string): Promise<{message: string}> {
@@ -163,11 +166,12 @@ export class GameService {
       throw new NotFoundException(`No active quiz session found for class ID ${classId}`);
     }
 
-    this.cacheService.set(sessionKey, JSON.stringify({ ...sessionData, isStarted: true } as quizSession));
+    this.cacheService.setGameData(sessionKey, JSON.stringify({ ...sessionData, isStarted: true } as quizSession));
     
     this.websocketService.emit( SocketEvents.QUIZ_STARTED, { message: 'The quiz has started!', classId });
     return { message: `Quiz session for class ID ${classId} has been started.` };
   }
+
 
   async isGameSessionExistStudent(classId?: string ): Promise<{message: string, exists: boolean}> {
 
@@ -188,6 +192,8 @@ export class GameService {
       throw new NotFoundException(`No active quiz session found for class ID ${classId}`);
     }
 
+    console.log(sessionData);
+    console.log(sessionData.students);
     sessionData.students.forEach(student => {
       if (!student.isInGame && student.id === userId) {
         student.isInGame = true;
@@ -195,7 +201,9 @@ export class GameService {
       }
     });
 
-    await this.cacheService.set(sessionKey, JSON.stringify(sessionData));
+    await this.cacheService.setGameData(sessionKey, JSON.stringify(sessionData));
+    const roomKey = await this.sharedService.joinRoomKey(classId);
+    this.websocketService.emit(SocketEvents.STUDENT_JOIN, { role: 'student', id: userId }, roomKey);
     return { message: `Successfully joined quiz session for class ID ${classId}` };
   }
 

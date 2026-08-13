@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { quizSession } from "@repo/types";
 import { getStudentsInSession } from "../../api/gameApi";
-
+import { socket } from "../../socket/socket";
+import type { socketEvents } from "@repo/types";
 const HABITATS = [
   { bg: "#E4F5D8", border: "#3FA34D", text: "#1F5C2B", emoji: "🐸" },
   { bg: "#DCF0F8", border: "#2F9BCB", text: "#1B5A78", emoji: "🐟" },
@@ -31,6 +32,13 @@ const MOCK_STUDENTS: quizSession['students'] = [
   { id: "5", name: "Kyle", isInGame: false, joinedAt: Date.now() - 20000 },
   { id: "6", name: "Nadine", isInGame: false, joinedAt: Date.now() - 4000 },
 ];
+
+const SocketEvents: socketEvents = {
+  STUDENT_JOIN: "student-join",
+  QUIZ_STARTED: "quiz-started",
+  QUIZ_ENDED: "quiz-ended",
+  PDF_UPLOADED: "pdf-uploaded",
+};
 export default function StudentQuizLobby() {
   const [now, setNow] = useState(Date.now());
 
@@ -40,6 +48,19 @@ export default function StudentQuizLobby() {
   }, []);
 
 
+  useEffect(() => {
+    socket.connect();
+    socket.on(SocketEvents.STUDENT_JOIN, (data) => {
+      console.log("Student joined:", data);
+      handleGetStudents();
+    });
+
+    socket.emit(SocketEvents.STUDENT_JOIN, { roomId: "quiz_room_123" });
+    return () => {
+      socket.off(SocketEvents.STUDENT_JOIN);
+      socket.disconnect();
+    }
+  }, []);
   const handleGetStudents = async () => {
     try {
       const students = await getStudentsInSession();

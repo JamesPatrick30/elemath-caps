@@ -80,7 +80,7 @@ export class GameController {
     @Get('students')
     @UseGuards(AccessStudentGuard)
     async getStudentsInSession(@Req() req: Request) {
-        const classId = req.user.classId;
+        const classId = req.user?.classId;
         return this.gameService.getStudentsInSession(classId);
     }
 }

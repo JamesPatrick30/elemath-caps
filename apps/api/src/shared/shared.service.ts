@@ -10,4 +10,12 @@ export class SharedService {
   async comparePasswords(password: string, hashedPassword: string): Promise<boolean> {
     return bcrypt.compare(password, hashedPassword);
   }
+
+  async userWebsocketIdKey(userId: string): Promise<string> {
+    return `user_websocket_id_${userId}`;
+  }
+
+  joinRoomKey(roomId: string): string {
+    return `room_${roomId}`;
+  }
 }

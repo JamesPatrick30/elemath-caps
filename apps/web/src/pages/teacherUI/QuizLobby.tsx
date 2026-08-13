@@ -7,7 +7,6 @@ import { uploadPdf, getPdf } from "../../api/pdfApi";
 import { generateQuestions, addQuestion } from "../../api/gameApi";
 import type { QuizSessiondata } from "../../types";
 import type { uploadTask } from "@repo/types";
-
 // Fun critter avatars assigned per student index — gives kids something to
 // recognize at a glance instead of a wall of plain names.
 const CRITTERS = ["🐸", "🦎", "🦉", "🐿️", "🦋", "🐝", "🐢", "🦔", "🐍", "🦜"];
@@ -99,21 +98,25 @@ export default function QuizLobby() {
     useEffect(() => {
         socket.connect();
 
+        socket.on('connect', () => {
+            console.log(`Connected to WebSocket server with socket ID: ${socket.id}`);
+        });
+        socket.on(SocketEvents.STUDENT_JOIN, (data) => {
+            console.log("Student joined:", data);
+            setSession((prevSession) => {
+                if (!prevSession) return prevSession;
+                const updatedStudents = prevSession.students.map((student) => {
+                    if (student.id === data.id) {
+                        return { ...student, isInGame: true, joinedAt: Date.now() };
+                    }
+                    return student;
+                });
+                return { ...prevSession, students: updatedStudents };
+            });
+        });
+
         socket.on(SocketEvents.PDF_UPLOADED, (data: FileProcessedUpdate) => {
-            // Merge the processed result into the matching file entry rather
-            // than a single global status — multiple files can be in flight.
-            // setUploadedFiles((prev) => {
-            //     const exists = prev.some((f) => f.id === data.id);
-            //     if (!exists) {
-            //         // File finished processing but wasn't in our list yet
-            //         // (e.g. race with the initial fetch) — refetch to be safe.
-            //         refreshUploadedFiles();
-            //         return prev;
-            //     }
-            //     return prev.map((f) =>
-            //         f.id === data.id ? { ...f, context: data.context ?? f.context } : f
-            //     );
-            // });
+            console.log("PDF uploaded:", data);
             if ( data.isDone) {
                 refreshUploadedFiles();
                 setTimeout(() => {
@@ -126,9 +129,12 @@ export default function QuizLobby() {
             }
             setFileUploadedStatus(data);
         });
+        socket.emit(SocketEvents.STUDENT_JOIN, { roomId:classId  });
+
 
         return () => {
             socket.off(SocketEvents.PDF_UPLOADED);
+            socket.off(SocketEvents.STUDENT_JOIN);
         };
     }, []);
 
