@@ -12,7 +12,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:redis": "tsc"
+    "build:redis": "tsc",
+    "dev": "tsc"
   },
   "dependencies": {
     "ioredis": "^5.4.1"

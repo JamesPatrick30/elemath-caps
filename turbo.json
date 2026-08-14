@@ -19,7 +19,6 @@
       "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
     },
     "dev": {
-      "dependsOn": ["^build:redis", "^db:generate"],
       "cache": false,
       "persistent": true
     },
