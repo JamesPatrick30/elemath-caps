@@ -1,5 +1,5 @@
 export interface GenerateQuestionsRequest {
-    content?: string | null;
+    lessonId: string | null;
     numberOfQuestions: number;
     type: 'multiple-choice' | 'true-false' | 'short-answer';
 }
@@ -28,4 +28,10 @@ export interface removeQuestionsFromSessionRequest {
 export interface createQuizSessionResponse {
     sessionId: string;
     message: string;
+}
+
+export interface generateQuestionsQueueData {
+    moduleId: string;
+    numberOfQuestions: number;
+    type: 'multiple-choice' | 'true-false' | 'short-answer';
 }

@@ -9,13 +9,16 @@ export interface workerQueueDataFile {
 export interface pdfUploadRequest {
     classId: string;
 }
-export interface workerQueue {
-    PDF: 'pdf';
-    GenerateQuestions: 'generate-questions';
-}
+
 
 export interface uploadTask {
     id: string;
     status: string;
     isDone: boolean;
+    userId?: string;
+}
+
+export interface checkCacheStatusResponse {
+    processing: boolean;
+    status: string;
 }
