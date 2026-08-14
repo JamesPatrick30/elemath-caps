@@ -9,14 +9,14 @@ import { OnModuleInit } from '@nestjs/common';
 
 import { Server, Socket } from 'socket.io';
 
-import { CacheService } from '@repo/redis';
+import { CacheService,RedisPubSubService } from '@repo/redis';
 import { WebsocketService } from './websocket.service';
-import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import { SharedService } from '../shared/shared.service';
 import { SocketEvents } from '../types/socketEvents';
 import { UnauthorizedException } from '@nestjs/common';
-import { RedisPubSubService } from '@repo/redis';
 import { pubsubEvents } from '../types/pubsubEvents';
+import { uploadTask } from '@repo/types';
 @WebSocketGateway({
   cors: {
     origin: 'http://localhost:5173',
@@ -36,13 +36,19 @@ export class WebsocketGateway implements OnGatewayInit, OnModuleInit {
   server!: Server;
 
   onModuleInit() {
-    this.redisPubSubService.subscribe(pubsubEvents.FILE_UPLOAD, (payload: any) => {
-      const  { status, id, isDone } = payload;
-      console.log(`Publishing to socket ${id}:`, { status, isDone });
+    this.redisPubSubService.subscribe(pubsubEvents.FILE_UPLOAD, async (payload: uploadTask) => {
+      const  { status, id, isDone, userId } = payload;
+      console.log(`Publishing to socket ${id}:`, { status, isDone, userId });
       this.server.to(id).emit(SocketEvents.PDF_UPLOADED, {
         status,
         isDone,
       });
+
+      if (isDone) {
+        const cacheKey = this.sharedService.uploadFileTaskKey(userId);
+
+        await this.cacheService.del(cacheKey);
+      }
     });
 
     this.redisPubSubService.subscribe(pubsubEvents.SOCKET_EVENT, (payload: any) => {

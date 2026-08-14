@@ -10,7 +10,7 @@ import type { uploadTask } from '@repo/types';
 import { CacheService } from '@repo/redis';
 import { pubsubEvents } from '../types/pubsubEvents';
 import { QueueNames } from '../types/queue';
-
+import { checkCacheStatusResponse } from '@repo/types';
 @Injectable()
 export class PdfService {
     private client: OpenAI;
@@ -28,6 +28,10 @@ export class PdfService {
     }
     private readonly logger = new Logger(PdfService.name);
 
+    private uploadFileTaskKey(fileId?: string): string {
+        return `upload_file_${fileId}`;
+    }
+
     async pdfProcessor(data: workerQueueDataFile): Promise<void> {
         try {
         
@@ -35,7 +39,10 @@ export class PdfService {
         const buffer = await fs.readFile(data.path);
 
         let userSocketId: { id: string } | null = await this.cacheService.get(`socket:${data.userId}`); 
-        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'PDF processed successfully', id: userSocketId?.id, isDone: false } as uploadTask);
+        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'PDF processed successfully', id: userSocketId?.id, isDone: false, userId: data.userId } as uploadTask);
+        
+        const cacheKey = this.uploadFileTaskKey(data.userId);
+        await this.cacheService.set(cacheKey, JSON.stringify({ status: 'PDF processed successfully', processing: true } as checkCacheStatusResponse), 3600); // Cache for 1 hour (3600 seconds)
         // Extract text
         const result = await pdfParse(buffer);
 
@@ -49,8 +56,11 @@ export class PdfService {
 
 
             userSocketId = await this.cacheService.get(`socket:${data.userId}`);
-            console.log(`Publishing to socket ${userSocketId?.id}: Generating practice questions...`);
-            this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Generating practice questions...', id: userSocketId?.id, isDone: false } as uploadTask);
+            
+            this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Generating practice questions...', id: userSocketId?.id, isDone: false, userId: data.userId } as uploadTask);
+
+            // Update the cache to indicate that the PDF is being processed
+            await this.cacheService.set(cacheKey, JSON.stringify({ status: 'Generating practice questions...', processing: true } as checkCacheStatusResponse), 3600); // Cache for 1 hour (3600 seconds)
 
             // questions = await this.AIQuestionGenerator(summary);
 
@@ -77,7 +87,9 @@ export class PdfService {
 
         userSocketId = await this.cacheService.get(`socket:${data.userId}`);
 
-        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Data saved successfully', id: userSocketId?.id, isDone: false } as uploadTask);
+        await this.cacheService.set(cacheKey, JSON.stringify({ status: 'Data saved successfully', processing: false } as checkCacheStatusResponse), 3600); // Cache for 1 hour (3600 seconds)
+
+        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Data saved successfully', id: userSocketId?.id, isDone: false, userId: data.userId } as uploadTask);
 
         } catch (error) {
         this.logger.error('Failed to process PDF', error);
@@ -153,8 +165,9 @@ export class PdfService {
 
     async onFailed(data: any, error: any) {
         const userSocketId: { id: string } | null = await this.cacheService.get(`socket:${data.userId}`);
-        console.error(`Job failed for user ${data.userId} with error:`, error);
-        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Failed', id: userSocketId?.id, isDone: true } as uploadTask);
+        
+        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Failed', id: userSocketId?.id, isDone: true, userId: data.userId } as uploadTask);
+
 
     }
 
@@ -162,6 +175,6 @@ export class PdfService {
         const userSocketId: { id: string } | null = await this.cacheService.get(`socket:${data.userId}`);
 
         console.log(`Job completed for user ${data.userId} with result:`, returnvalue);
-        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Completed', id: userSocketId?.id, isDone: true } as uploadTask);
+        this.redisPubSubService.publish(pubsubEvents.FILE_UPLOAD, { status: 'Completed', id: userSocketId?.id, isDone: true, userId: data.userId } as uploadTask);
     }
 }

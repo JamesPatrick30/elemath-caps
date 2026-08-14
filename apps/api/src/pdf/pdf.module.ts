@@ -4,6 +4,8 @@ import { PdfService } from './pdf.service';
 import { PdfController } from './pdf.controller';
 import { AuthModule } from '../auth/auth.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { RedisModule } from '@repo/redis';
+import { SharedService } from '../shared/shared.service';
 @Module({
     imports: [
         BullModule.registerQueue({
@@ -11,8 +13,9 @@ import { PrismaModule } from '../prisma/prisma.module';
             }),
         AuthModule,
         PrismaModule,
+        RedisModule,
     ],
-    providers: [PdfService],
+    providers: [PdfService, SharedService],
     controllers: [PdfController],
 
 })

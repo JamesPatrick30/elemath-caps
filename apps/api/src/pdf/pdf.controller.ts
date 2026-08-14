@@ -54,8 +54,13 @@ export class PdfController {
         };
     }
 
-    @Get(':classId')
+    @Get(':classId/lessons')
     async getPdf(@Param('classId') classId: string) {
         return this.pdfService.getPdf(classId);
+    }
+
+    @Get('processing')
+    async getProcessingFiles( @Req() req : Request) {
+        return this.pdfService.getProcessingFile(req.user.sub);
     }
 }

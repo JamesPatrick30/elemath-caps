@@ -18,4 +18,8 @@ export class SharedService {
   joinRoomKey(roomId: string): string {
     return `room_${roomId}`;
   }
+
+  uploadFileTaskKey(fileId?: string): string {
+    return `upload_file_${fileId}`;
+  }
 }

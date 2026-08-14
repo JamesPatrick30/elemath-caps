@@ -46,6 +46,13 @@ export class WebsocketService {
     this.server.emit(event, payload);
   }
 
+  teacherJoinRoom( room: string) {
+    if (!this.server) {
+      return;
+    }
+    this.server.socketsJoin(room);
+    // this.server.to(room).emit(SocketEvents.STUDENT_JOIN, { room });
+  }
   joinRoom(userId: string, room: string) {
     if (!this.server) {
       return;
