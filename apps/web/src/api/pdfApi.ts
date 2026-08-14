@@ -2,7 +2,7 @@
 // NOTE: adjust the axios import to whatever instance gameApi.ts uses
 // (the one with cookie-based auth already configured).
 import {api} from "./axios";
-
+import type { checkCacheStatusResponse } from "@repo/types";
 export const uploadPdf = (
     classId: string,
     file: File,
@@ -23,7 +23,13 @@ export const uploadPdf = (
 };
 
 export const getPdf = async (classId: string): Promise<{id: string; fileName: string; context: string;}[] | null> => {
-    const response = await api.get(`/pdf/${classId}`);
+    const response = await api.get(`/pdf/${classId}/lessons`);
     console.log('getPdf response:', response.data);
     return response.data;
 };
+
+export const getProcessingFiles = async (): Promise<checkCacheStatusResponse> => {
+    const response = await api.get(`/pdf/processing`);
+    console.log('getProcessingFiles response:', response.data);
+    return response.data;
+}

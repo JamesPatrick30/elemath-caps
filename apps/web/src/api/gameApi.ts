@@ -1,6 +1,6 @@
 import { api } from "./axios";
 import type { MessageResponse, StartSessionInput, QuizSessiondata } from "../types";
-import type { createQuizSessionResponse, quizSession } from "@repo/types";
+import type { createQuizSessionResponse,GenerateQuestionsRequest, quizSession } from "@repo/types";
 // Base path confirmed: @Controller('game').
 
 // GameService.CreateQuizSession returns Promise<void> and the controller
@@ -41,7 +41,7 @@ export async function isQuizSessionExist() {
 // api/gameApi.ts
 // import type { GenerateQuestionsRequest, AddQuestionRequest } from "@repo/types";
 
-export const generateQuestions = (payload: any) => {
+export const generateQuestions = (payload: GenerateQuestionsRequest) => {
     return api.post("/game/generate/questions", payload);
 };
 

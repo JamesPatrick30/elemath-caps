@@ -54,9 +54,21 @@
   --font-sans: "Inter", ui-sans-serif, system-ui;
 }
 
+button {
+  cursor: pointer;
+}
 body {
   background-color: #eaf7ff; /* soft sky tint instead of flat pale blue-gray */
   font-family: var(--font-sans);
+}
+
+@keyframes pixel-bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+}
+
+.animate-pixel-bounce {
+    animation: pixel-bounce 900ms steps(2, jump-none) infinite;
 }
 
 .pixel-font { font-family: 'Press Start 2P', monospace; }

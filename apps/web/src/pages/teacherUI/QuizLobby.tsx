@@ -1,87 +1,39 @@
+import { useNavigate, useParams } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { getPdf, uploadPdf,getProcessingFiles } from "../../api/pdfApi";
 import { socket } from "../../socket/socket";
-import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { SocketEvents } from "../../socket/socketEvents";
-import { getGameSession } from "../../api/gameApi";
-import { uploadPdf, getPdf } from "../../api/pdfApi";
-import { generateQuestions, addQuestion } from "../../api/gameApi";
-import type { QuizSessiondata } from "../../types";
 import type { uploadTask } from "@repo/types";
-// Fun critter avatars assigned per student index — gives kids something to
-// recognize at a glance instead of a wall of plain names.
-const CRITTERS = ["🐸", "🦎", "🦉", "🐿️", "🦋", "🐝", "🐢", "🦔", "🐍", "🦜"];
+import { generateQuestions, getGameSession } from "../../api/gameApi";
 
-// TODO: confirm exact PDF_UPLOADED payload shape with backend. Assuming it
-// carries at least the file id + processing status + resulting summary
-// once the BullMQ job finishes.
 interface FileProcessedUpdate extends uploadTask {
-    id: string;
     status: string;
     isDone: boolean;
-    context?: string;
 }
-
-interface UploadedFile {
-    id: string;
-    fileName: string;
-    context: string; // empty string = still processing, per getPdf backend
-}
-
-type UploadPanelStatus = "idle" | "selected" | "uploading" | "error";
-type GenerateStatus = "idle" | "generating" | "success" | "error";
-
-const QUESTION_TYPES = [
-    { value: "multiple-choice", label: "Multiple Choice" },
-    { value: "true-false", label: "True / False" },
-    { value: "short-answer", label: "Short Answer" },
-] as const;
 
 export default function QuizLobby() {
-    // Route now keyed on classId — students auto-join via their own button,
-    // so there's no manual "session code" to display anymore.
-    const { classId } = useParams<{ classId: string }>();
+
     const navigate = useNavigate();
-
-    const [session, setSession] = useState<QuizSessiondata | null>(null);
-
-    // --- Upload panel state ---
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [uploadPanelStatus, setUploadPanelStatus] = useState<UploadPanelStatus>("idle");
+    
+    const { classId } = useParams<{ classId: string }>();
+    const [session, setSession] = useState<any>(null);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // --- File library + generate panel state ---
-    const [fileUploadedStatus, setFileUploadedStatus] = useState<FileProcessedUpdate|null>(null);
-    const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-    const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
-    const [numberOfQuestions, setNumberOfQuestions] = useState(10);
-    const [questionType, setQuestionType] = useState<(typeof QUESTION_TYPES)[number]["value"]>(
-        "multiple-choice"
-    );
-    const [generateStatus, setGenerateStatus] = useState<GenerateStatus>("idle");
-    const [generatedCount, setGeneratedCount] = useState<number | null>(null);
-
-    if (classId === undefined || classId === null) {
-        console.error("Class ID is undefined or null. Redirecting to teacher dashboard.");
-        navigate("/teacher/");
-    }
-
-    const refreshUploadedFiles = async () => {
-        if (!classId) return;
-        try {
-            const files = await getPdf(classId);
-            setUploadedFiles(files ?? []);
-        } catch (error) {
-            console.error("Error fetching uploaded files:", error);
-        }
-    };
+    const [isDragging, setIsDragging] = useState(false);
+    const [Dropfile, setDropfile] = useState<File | null>(null);
+    const [uploadPanelStatus, setUploadPanelStatus] = useState<FileProcessedUpdate | null>(null);
+    const dragCounter = useRef(0);
+    const [numberOfQuestions, setNumberOfQuestions] = useState<number>(5);
+    const [questionType, setQuestionType] = useState<'multiple-choice' | 'true-false' | 'short-answer'>('multiple-choice');
+    const [selectedLesson, setSelectedLesson] = useState<any>(null);
+    const [loadingFiles, setLoadingFiles] = useState(false);
+    const [lessons, setLessons] = useState<any[]>([]);
 
     useEffect(() => {
         const checkSessionExistence = async () => {
             try {
                 const response = await getGameSession(classId!);
                 if (response.data) {
+                    console.log("Quiz session exists:", response.data);
                     setSession(response.data);
                 }
             } catch (error: any) {
@@ -92,20 +44,147 @@ export default function QuizLobby() {
             }
         };
         checkSessionExistence();
+    },[]);
+
+    const refreshUploadedFiles = async () => {
+        if (!classId) return;
+        try {
+            const files = await getPdf(classId);
+            console.log("Fetched uploaded files:", files);
+            setLessons(files ?? []);
+        } catch (error) {
+            console.error("Error fetching uploaded files:", error);
+        }
+    };
+
+    const refreshProcessingStatus = async () => {
+        if (!classId) return;
+        setLoadingFiles(true);
+
+        try {
+
+            const status = await getProcessingFiles();
+            console.log("Fetched processing status:", status);
+            if (status.processing) {
+                setUploadPanelStatus({status: status.status, isDone: false, id: "", userId: ""});
+            }else{
+                setUploadPanelStatus(null);
+
+            }
+
+        }
+        catch (error) {
+            console.error("Error fetching processing status:", error);
+        }finally {
+            setLoadingFiles(false);
+        }
+    };
+
+    // Refresh the processing status and uploaded files when the component mounts or when classId changes
+    useEffect( ()=> {
+        refreshProcessingStatus();
         refreshUploadedFiles();
     }, [classId]);
 
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!e.dataTransfer.types.includes("Files")) return;
+
+        dragCounter.current += 1;
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        dragCounter.current -= 1;
+        if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setIsDragging(false);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        // Must preventDefault on dragover, or drop never fires — but don't touch state here.
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDragging(false);
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            setDropfile(files[0]);
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!Dropfile || !classId) return;
+
+        try {
+            await uploadPdf(classId, Dropfile, (percent) => {
+                setUploadProgress(percent);
+            });
+            resetUploadPanel();
+        } catch (error) {
+
+            console.error("PDF upload failed:", error);
+
+        }
+    };
+
+    const handleGenerateStart = async () => {
+        console.log("Starting question generation with parameters:", {
+            lessonId: selectedLesson?.id,
+            numberOfQuestions,
+            type: questionType,
+        });
+        if (!classId) return;
+        if (!selectedLesson) return;
+        if (!numberOfQuestions || numberOfQuestions <= 0) return;
+        if (!questionType) return;
+        try{
+            await generateQuestions({
+                lessonId: selectedLesson.id,
+                numberOfQuestions,
+                type: questionType,
+            });
+        }catch(error){
+            console.error("Error starting question generation:", error);
+        }
+    }
+
+    const resetUploadPanel = () => {
+        setDropfile(null);
+        setUploadProgress(0);
+        setUploadPanelStatus(null);
+    }
+
     useEffect(() => {
         socket.connect();
-
-        socket.on('connect', () => {
-            console.log(`Connected to WebSocket server with socket ID: ${socket.id}`);
+        socket.on(SocketEvents.PDF_UPLOADED, (data: FileProcessedUpdate) => {
+            console.log("PDF uploaded event received:", data);
+            setUploadPanelStatus(data);
+            if (data.isDone) {
+                // 3 second delay to allow the user to see the "done" status before resetting the panel
+                setTimeout(() => {
+                    resetUploadPanel();
+                }, 3000);
+                
+            }
         });
         socket.on(SocketEvents.STUDENT_JOIN, (data) => {
+
             console.log("Student joined:", data);
-            setSession((prevSession) => {
+            setSession((prevSession: any) => {
                 if (!prevSession) return prevSession;
-                const updatedStudents = prevSession.students.map((student) => {
+                const updatedStudents = prevSession.students.map((student: any) => {
                     if (student.id === data.id) {
                         return { ...student, isInGame: true, joinedAt: Date.now() };
                     }
@@ -114,443 +193,155 @@ export default function QuizLobby() {
                 return { ...prevSession, students: updatedStudents };
             });
         });
-
-        socket.on(SocketEvents.PDF_UPLOADED, (data: FileProcessedUpdate) => {
-            console.log("PDF uploaded:", data);
-            if ( data.isDone) {
-                refreshUploadedFiles();
-                setTimeout(() => {
-                    setFileUploadedStatus(null);
-
-                }, 1000);
-                setFileUploadedStatus(data);
-
-                return;
-            }
-            setFileUploadedStatus(data);
-        });
-        socket.emit(SocketEvents.STUDENT_JOIN, { roomId:classId  });
-
-
         return () => {
             socket.off(SocketEvents.PDF_UPLOADED);
             socket.off(SocketEvents.STUDENT_JOIN);
-        };
+        }
     }, []);
-
-    const joinedCount = session?.students.length ?? 0;
-    const inGameCount = session?.students.filter((s) => s.isInGame).length ?? 0;
-
-    // --- Upload handlers ---
-    const handleFileSelect = (file: File | null) => {
-        setErrorMessage(null);
-        if (!file) return;
-        if (file.type !== "application/pdf") {
-            setErrorMessage("Please choose a PDF file.");
-            return;
-        }
-        setSelectedFile(file);
-        setUploadPanelStatus("selected");
-    };
-
-    const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
-        e.preventDefault();
-        handleFileSelect(e.dataTransfer.files?.[0] ?? null);
-    };
-
-    const handleUpload = async () => {
-        if (!selectedFile || !classId) return;
-        setUploadPanelStatus("uploading");
-        setUploadProgress(0);
-        setErrorMessage(null);
-
-        try {
-            await uploadPdf(classId, selectedFile, (percent) => {
-                setUploadProgress(percent);
-            });
-            // Controller only queues the BullMQ job and returns { success: true }
-            // — no file id back yet, so refetch the list to pick up the new
-            // (still-processing) entry. PDF_UPLOADED will fill in context later.
-            await refreshUploadedFiles();
-            resetUploadPanel();
-        } catch (error) {
-            console.error("PDF upload failed:", error);
-            setErrorMessage("Upload failed. Try again?");
-            setUploadPanelStatus("error");
-        }
-    };
-
-    const resetUploadPanel = () => {
-        setSelectedFile(null);
-        setUploadPanelStatus("idle");
-        setUploadProgress(0);
-        setErrorMessage(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-    };
-
-    // --- Generate handlers ---
-    const handleGenerate = async () => {
-        if (!selectedFileId || !classId) return;
-        const file = uploadedFiles.find((f) => f.id === selectedFileId);
-        if (!file || !file.context) return; // guard: not done processing
-
-        setGenerateStatus("generating");
-        try {
-            // TODO: confirm response shape — assuming it returns the array of
-            // generated questions rather than auto-attaching them to the
-            // session, since GenerateQuestionsDto takes no classId.
-            const { data: questions } = await generateQuestions({
-                content: file.context,
-                numberOfQuestions,
-                type: questionType,
-            });
-
-            console.log("Generated questions:", questions);
-            // Attach each generated question to this class's session.
-            await Promise.all(
-                questions.map((q: any) =>
-                    addQuestion({
-                        classId,
-                        question: q.question,
-                        choices: q.choices,
-                        type: q.type,
-                        answer: q.answer,
-                    })
-                )
-            );
-
-            setGeneratedCount(questions.length);
-            setGenerateStatus("success");
-        } catch (error) {
-            console.error("Question generation failed:", error);
-            setGenerateStatus("error");
-        }
-    };
-
     return (
-        <div className="relative min-h-screen overflow-hidden bg-canopy-950 p-6 md:p-10 flex items-center justify-center">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,theme(colors.canopy.900)_0%,transparent_45%),radial-gradient(circle_at_85%_80%,theme(colors.canopy.900)_0%,transparent_40%)]" />
-            <div className="pointer-events-none absolute inset-0">
-                {[...Array(12)].map((_, i) => (
-                    <span
-                        key={i}
-                        className="absolute h-1 w-1 rounded-full bg-sun-300 animate-pulse"
-                        style={{
-                            top: `${(i * 37) % 100}%`,
-                            left: `${(i * 53) % 100}%`,
-                            animationDelay: `${(i % 5) * 0.4}s`,
-                            animationDuration: "2.5s",
-                            boxShadow: "0 0 6px theme(colors.sun.300)",
-                        }}
-                    />
-                ))}
-            </div>
-
-            <div className="relative z-10 w-full max-w-6xl flex flex-col md:flex-row gap-6">
-                {/* LEFT: upload + file library + generate */}
-                <div className="md:w-[380px] flex flex-col gap-4">
-                    <div className="border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(colors.canopy.950)]">
-                        <div className="flex items-center gap-2">
-                            <span className="text-2xl">🔥</span>
-                            <h1 className="font-press text-lg text-sun-300 leading-tight">
-                                Quiz Lobby
-                            </h1>
-                        </div>
-                        <p className="font-mono text-xs text-parchment-400 mt-2 leading-relaxed">
-                            Your explorers can join this class's quiz anytime from their dashboard.
-                        </p>
-                    </div>
-
-                    {/* Upload panel */}
-                    <div className="border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(colors.canopy.950)] flex flex-col gap-3">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xl">📤</span>
-                            <h2 className="font-press text-xs text-parchment-100 leading-tight">
-                                Upload Material
-                            </h2>
-                        </div>
-
-                        {fileUploadedStatus === null ? (
-                            <label
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={handleDrop}
-                                className="cursor-pointer border-2 border-dashed border-sky-400/60 bg-sky-500/5 hover:bg-sky-500/10 transition-colors px-4 py-6 flex flex-col items-center gap-2 text-center"
-                            >
-                                <span className="text-2xl">📄</span>
-                                <span className="font-mono text-xs text-sky-300">
-                                    Drop a PDF or click to choose
-                                </span>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="application/pdf"
-                                    className="hidden"
-                                    onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
-                                />
-                            </label>
-                        ):(
-                            <div className="flex flex-col items-center gap-2 py-6 text-center">
-                                <span className="text-2xl">📄</span>
-                                <span className="font-mono text-xs text-sky-300">
-                                    Uploading {fileUploadedStatus.id} — {fileUploadedStatus.status}
-                                </span>
-                            </div>
-                        )}
-
-                        {(uploadPanelStatus === "selected" || uploadPanelStatus === "error") && selectedFile && (
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center justify-between gap-2 border-2 border-canopy-700 bg-canopy-950/60 px-3 py-2">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <span className="text-lg shrink-0">📄</span>
-                                        <span className="font-mono text-xs text-parchment-100 truncate">
-                                            {selectedFile.name}
-                                        </span>
-                                    </div>
-                                    <button
-                                        onClick={resetUploadPanel}
-                                        className="font-mono text-[10px] text-parchment-400 hover:text-bubblegum-400 shrink-0"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-
-                                {errorMessage && (
-                                    <p className="font-mono text-[11px] text-bubblegum-400">{errorMessage}</p>
-                                )}
-
-                                <button
-                                    onClick={handleUpload}
-                                    className="font-press text-[10px] uppercase tracking-wider text-canopy-950 bg-sky-400
-                                        border-4 border-canopy-950 px-4 py-3
-                                        shadow-[4px_4px_0_theme(colors.canopy.950)]
-                                        transition-all hover:bg-sky-300
-                                        active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
-                                >
-                                    ⬆ Upload PDF
-                                </button>
-                            </div>
-                        )}
-
-                        {uploadPanelStatus === "uploading" && (
-                            <div className="flex flex-col gap-2">
-                                <p className="font-mono text-xs text-sky-300 truncate">
-                                    Uploading {selectedFile?.name}…
-                                </p>
-                                <div className="h-3 border-2 border-canopy-700 bg-canopy-950/60 overflow-hidden">
-                                    <div
-                                        className="h-full bg-sky-400 transition-all duration-200"
-                                        style={{ width: `${uploadProgress}%` }}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* File library + generate panel */}
-                    <div className="border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(colors.canopy.950)] flex flex-col gap-3">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xl">✨</span>
-                            <h2 className="font-press text-xs text-parchment-100 leading-tight">
-                                Generate Questions
-                            </h2>
-                        </div>
-
-                        {uploadedFiles.length === 0 ? (
-                            <p className="font-mono text-xs text-parchment-400 py-2">
-                                Upload a PDF above to get started.
-                            </p>
-                        ) : (
-                            <ul className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
-                                {uploadedFiles.map((file) => {
-                                    const isReady = !!file.context;
-                                    const isSelected = selectedFileId === file.id;
-                                    return (
-                                        <li key={file.id}>
-                                            <button
-                                                disabled={!isReady}
-                                                onClick={() => setSelectedFileId(file.id)}
-                                                className={`w-full flex items-center justify-between gap-2 border-2 px-3 py-2 text-left transition-colors ${
-                                                    isSelected
-                                                        ? "border-mango-400 bg-mango-400/10"
-                                                        : "border-canopy-700 bg-canopy-950/60"
-                                                } ${isReady ? "hover:border-mango-400/60" : "opacity-50 cursor-not-allowed"}`}
-                                            >
-                                                <span className="font-mono text-xs text-parchment-100 truncate">
-                                                    {file.fileName}
-                                                </span>
-                                                {isReady ? (
-                                                    <span className="font-mono text-[9px] uppercase text-leaf-400 shrink-0">
-                                                        Ready
-                                                    </span>
-                                                ) : (
-                                                    <span className="font-mono text-[9px] uppercase text-sun-300 shrink-0 flex items-center gap-1">
-                                                        <span className="animate-spin">⏳</span> Processing
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        )}
-
-                        {selectedFileId && (
-                            <div className="flex flex-col gap-3 pt-2 border-t-2 border-canopy-800">
-                                <div className="flex gap-3">
-                                    <div className="flex-1">
-                                        <label className="font-mono text-[10px] uppercase text-parchment-400 mb-1 block">
-                                            # Questions
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={50}
-                                            value={numberOfQuestions}
-                                            onChange={(e) => setNumberOfQuestions(Number(e.target.value))}
-                                            className="w-full font-mono text-sm text-parchment-100 bg-canopy-950/60 border-2 border-canopy-700 px-2 py-1 focus:border-mango-400 outline-none"
-                                        />
-                                    </div>
-                                    <div className="flex-[1.4]">
-                                        <label className="font-mono text-[10px] uppercase text-parchment-400 mb-1 block">
-                                            Type
-                                        </label>
-                                        <select
-                                            value={questionType}
-                                            onChange={(e) => setQuestionType(e.target.value as typeof questionType)}
-                                            className="w-full font-mono text-xs text-parchment-100 bg-canopy-950/60 border-2 border-canopy-700 px-2 py-1.5 focus:border-mango-400 outline-none"
-                                        >
-                                            {QUESTION_TYPES.map((t) => (
-                                                <option key={t.value} value={t.value}>
-                                                    {t.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {generateStatus === "idle" || generateStatus === "error" ? (
-                                    <button
-                                        onClick={handleGenerate}
-                                        className="font-press text-[10px] uppercase tracking-wider text-canopy-950 bg-mango-400
-                                            border-4 border-canopy-950 px-4 py-3
-                                            shadow-[4px_4px_0_theme(colors.canopy.950)]
-                                            transition-all hover:bg-mango-300
-                                            active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
-                                    >
-                                        ✨ Generate Questions
-                                    </button>
-                                ) : generateStatus === "generating" ? (
-                                    <div className="flex flex-col items-center gap-2 py-3 text-center">
-                                        <span className="text-xl animate-bounce">✨</span>
-                                        <p className="font-mono text-xs text-mango-300">
-                                            Cooking up questions…
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 border-2 border-leaf-500/60 bg-leaf-500/10 px-3 py-2">
-                                        <span className="text-lg">✅</span>
-                                        <span className="font-mono text-xs text-leaf-300">
-                                            {generatedCount} questions added
-                                        </span>
-                                    </div>
-                                )}
-
-                                {generateStatus === "error" && (
-                                    <p className="font-mono text-[11px] text-bubblegum-400">
-                                        Generation failed. Try again?
-                                    </p>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Live joined counter */}
-                    <div className="border-4 border-canopy-800 bg-canopy-900 p-5 shadow-[6px_6px_0_theme(colors.canopy.950)]">
-                        <p className="font-mono text-[11px] uppercase tracking-wider text-leaf-400 mb-2">
-                            Explorers Joined
-                        </p>
-                        <div className="flex items-end gap-2">
-                            <span className="font-press text-4xl text-leaf-400">{joinedCount}</span>
-                            {inGameCount > 0 && (
-                                <span className="font-mono text-xs text-bubblegum-400 mb-1.5">
-                                    {inGameCount} already in-game
-                                </span>
-                            )}
-                        </div>
-                    </div>
+        <div className="h-screen w-full overflow-hidden bg-canopy-950 p-6 md:p-10 flex flex-col md:flex-row items-stretch justify-center gap-2.5">
+            <div className="flex flex-col gap-3 w-full md:w-100 md:shrink-0 min-h-0">
+                <div className="border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(--colors-canopy-950)] flex flex-col gap-3 w-full">
+                    <h3 className="text-md font-bold text-white mb-4">Class ID: {classId}</h3>
+                    <p className="text-white">This is a simple lesson</p>
                 </div>
 
-                {/* RIGHT: roster panel — unchanged */}
-                <div className="flex-1 flex flex-col border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(colors.canopy.950)]">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="font-press text-sm text-parchment-100">🌿 Who's Here</h2>
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-parchment-400">
-                            {joinedCount} joined
-                        </span>
-                    </div>
+                {/* Drag handlers now scoped to just this drop zone */}
+                <div
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    className="border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(--colors-canopy-950)] flex flex-col gap-3 w-full h-100 justify-center items-center"
+                >
+                    {loadingFiles? (
+                        <div className="flex flex-col items-center justify-center gap-4 h-full w-full px-4 py-6 text-center">
+                            {/* Pixel-block loader: three squares stepping in sequence, classic 8-bit style */}
+                            <div className="flex items-end gap-1.5">
+                                <span className="w-3 h-3 bg-leaf-400 animate-pixel-bounce [animation-delay:0ms]" />
+                                <span className="w-3 h-3 bg-leaf-400 animate-pixel-bounce [animation-delay:150ms]" />
+                                <span className="w-3 h-3 bg-leaf-400 animate-pixel-bounce [animation-delay:300ms]" />
+                            </div>
+                        </div>
+                    ) : isDragging ? (
+                        <div className="border-sky-400/60 bg-sky-500/5 transition-colors px-4 py-6 flex flex-col items-center gap-2 justify-center border-2 border-dashed h-full w-full pointer-events-none ">
+                            <p className="text-white text-lg">Drop files here</p>
+                        </div>
+                    ) : uploadProgress > 0 ? (
+                        <div className=" transition-colors px-4 py-6 flex flex-col items-center gap-2 text-center h-full w-full">
+                            <p className="text-white text-lg">Uploading...</p>
+                            <div className="w-full bg-canopy-800 h-2 rounded-full overflow-hidden">
+                                <div
+                                    className="bg-sky-500 h-full"
+                                    style={{ width: `${uploadProgress}%` }}
+                                />
+                            </div>
+                        </div>
+                    ) : Dropfile != null ? (
+                        <div className="flex flex-col items-center justify-center gap-4 h-full w-full px-4 py-6 text-center border-2 border-dashed border-leaf-400/50 bg-leaf-500/5">
+                            {/* File icon, since a name alone is easy to miss at a glance */}
+                            <svg
+                                className="w-10 h-10 text-leaf-400"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                            >
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <path d="M14 2v6h6" />
+                            </svg>
 
-                    <div className="flex-1 overflow-y-auto pr-1 min-h-[300px]">
-                        {joinedCount === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center gap-3 text-center py-10">
-                                <span className="text-4xl animate-bounce">🦉</span>
-                                <p className="font-mono text-sm text-parchment-400">
-                                    Waiting for explorers to join the jungle...
+                            <div className="flex flex-col gap-1">
+                                <p className="text-white font-sans text-sm">File dropped</p>
+                                <p className="text-leaf-400 font-mono text-xs break-all px-2">
+                                    {Dropfile.name}
                                 </p>
                             </div>
-                        ) : (
-                            <ul className="flex flex-col gap-2">
-                                {session?.students.map((student, index) => (
-                                    <li
-                                        key={index}
-                                        className="flex items-center justify-between gap-3 border-2 border-canopy-700 bg-canopy-800/60 px-4 py-3 transition-colors hover:border-leaf-500"
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <span className="text-xl shrink-0">
-                                                {CRITTERS[index % CRITTERS.length]}
-                                            </span>
-                                            <span className="font-mono text-sm text-parchment-100 truncate">
-                                                {student.name}
-                                            </span>
-                                        </div>
 
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <span
-                                                className={`h-2 w-2 rounded-full ${
-                                                    student.isInGame
-                                                        ? "bg-leaf-400 shadow-[0_0_6px_theme(colors.leaf.400)] animate-pulse"
-                                                        : "bg-canopy-600"
-                                                }`}
-                                            />
-                                            <span
-                                                className={`font-mono text-[10px] uppercase tracking-wider px-2 py-1 border ${
-                                                    student.isInGame
-                                                        ? "border-leaf-500 text-leaf-400 bg-leaf-500/10"
-                                                        : "border-canopy-600 text-parchment-400 bg-canopy-700/40"
-                                                }`}
-                                            >
-                                                {student.isInGame ? "In Game" : "Waiting"}
-                                            </span>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                            <button
+                                onClick={handleUpload}
+                                className="group relative py-2 px-4 mt-1 bg-mango-500 hover:bg-mango-400 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-canopy-950 font-pixel text-[10px] tracking-wide shadow-[3px_3px_0_theme(--colors-canopy-950)] transition-all duration-100"
+                            >
+                                Upload Another File
+                            </button>
+                        </div>
+                    ) : uploadPanelStatus != null ? (
+                        <div className="flex flex-col items-center justify-center gap-4 h-full w-full px-4 py-6 text-center">
+                            {/* Pixel-block loader: three squares stepping in sequence, classic 8-bit style */}
+                            <div className="flex items-end gap-1.5">
+                                <span className="w-3 h-3 bg-leaf-400 animate-pixel-bounce [animation-delay:0ms]" />
+                                <span className="w-3 h-3 bg-leaf-400 animate-pixel-bounce [animation-delay:150ms]" />
+                                <span className="w-3 h-3 bg-leaf-400 animate-pixel-bounce [animation-delay:300ms]" />
+                            </div>
 
-                    <div className="flex justify-end mt-6">
-                        <button
-                            disabled={joinedCount === 0}
-                            className="font-press text-xs uppercase tracking-wider text-canopy-950 bg-sun-400
-                                border-4 border-canopy-950 px-6 py-3
-                                shadow-[4px_4px_0_theme(colors.canopy.950)]
-                                transition-all
-                                hover:bg-sun-300
-                                active:translate-x-[4px] active:translate-y-[4px] active:shadow-none
-                                disabled:opacity-40 disabled:cursor-not-allowed disabled:active:translate-x-0 disabled:active:translate-y-0 disabled:active:shadow-[4px_4px_0_theme(colors.canopy.950)]"
-                        >
-                            ▶ Start Quiz
-                        </button>
-                    </div>
+                            <p className="text-sun-400 font-pixel text-[11px] tracking-wide">
+                                {uploadPanelStatus.status}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-4">
+                            <div className="relative">
+                                <select className="w-full appearance-none p-3 pr-10 bg-canopy-800 text-white font-sans text-sm border-2 border-canopy-700 focus:border-leaf-400 focus:outline-none transition-colors cursor-pointer" value={selectedLesson?.id ?? ""} onChange={(e) => {
+                                    const selectedId = e.target.value;
+                                    const lesson = lessons.find((lesson) => lesson.id.toString() === selectedId);
+                                    setSelectedLesson(lesson ?? null);
+                                }}>
+                                    <option value="">Select a lesson</option>
+                                    {lessons.map((lesson) => (
+                                        <option key={lesson.id} value={lesson.id}>
+                                            {lesson.fileName}
+                                        </option>
+                                    ))}
+                                </select>
+                                {/* Custom dropdown arrow, since appearance-none strips the native one */}
+                                <svg
+                                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-leaf-400"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
+                                >
+                                    <path d="M6 9l6 6 6-6" />
+                                </svg>
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center gap-4 w-full pt-2 border-t-2 border-canopy-800">
+                                <div className="flex items-center gap-3 w-full">
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        placeholder="No. of questions"
+                                        value={numberOfQuestions}
+                                        onChange={(e) => setNumberOfQuestions(Number(e.target.value))}
+                                        className="w-1/2 p-3 bg-canopy-800 text-white placeholder-canopy-500 font-sans text-sm border-2 border-canopy-700 focus:border-leaf-400 focus:outline-none transition-colors"
+                                    />
+                                    <select className="w-1/2 appearance-none p-3 bg-canopy-800 text-white font-sans text-sm border-2 border-canopy-700 focus:border-leaf-400 focus:outline-none transition-colors cursor-pointer" value={questionType ?? ""} onChange={(e) => setQuestionType(e.target.value as 'multiple-choice' | 'true-false' | 'short-answer' )}>
+                                        
+                                        <option value="multiple-choice">Multiple Choice</option>
+                                        <option value="true-false">True/False</option>
+                                        <option value="short-answer">Short Answer</option>
+                                    </select>
+                                </div>
+
+                                <button
+                                    onClick={handleGenerateStart}
+                                    className="group relative w-full py-3 px-4 bg-mango-500 hover:bg-mango-400 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-canopy-950 font-pixel text-[11px] tracking-wide shadow-[4px_4px_0_theme(--colors-canopy-950)] transition-all duration-100"
+                                >
+                                    Generate Questions
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex-1 flex flex-col min-h-0 border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(--colors-canopy-950)]">
+                <h2 className="text-2xl font-bold text-white mb-4">Students</h2>
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                    <ul className="space-y-2">
+                        {session?.students?.map((student: any, _: number) => (
+                            <li key={_} className="bg-canopy-800 p-4 rounded text-white flex justify-between items-center">
+                                <p>{student.name}</p>
+                                <p className={`text-sm border rounded px-2 py-1 ${student.isInGame ? "bg-green-400" : "bg-grey-600"}`}>
+                                    
+                                    {student.isInGame ? "In Game" : "Not In Game"}</p>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
         </div>

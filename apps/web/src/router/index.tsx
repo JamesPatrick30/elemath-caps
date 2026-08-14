@@ -44,7 +44,7 @@ export const router = createBrowserRouter([
             {
                 path: "/teacher/quiz-lobby/:classId",
                 element: <QuizLobby />,
-            },
+            }
         ],
     },
 
@@ -59,7 +59,7 @@ export const router = createBrowserRouter([
             {
                 path: "/student/quiz-lobby",
                 element: <StudentQuizLobby />,
-            }
+            },
         ],
     },
 ]);
