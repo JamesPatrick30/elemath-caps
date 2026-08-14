@@ -64,16 +64,16 @@ export class GameController {
         return this.gameService.removeQuestionFromSession(classId, questionIds);
     }
 
+    @UseGuards(AccessTeacherGuard)
     @Post('generate/questions')
-    async generateQuestions(@Body() body: GenerateQuestionsDto) {
-        const { content, numberOfQuestions, type } = body;
-        return this.gameService.generateQuestions({ content, numberOfQuestions, type });
+    async generateQuestions(@Body() body: GenerateQuestionsDto, @Req() req: Request) {
+        const { lessonId, numberOfQuestions, type } = body;
+        return this.gameService.generateQuestions({id: req.user.sub, email: req.user.email}, lessonId, numberOfQuestions, type);
     }
 
     @Post('join/:classId')
     @UseGuards(AccessStudentGuard)
     async joinGameSession(@Param('classId') classId: string, @Req() req: Request) {
-        console.log(`Student attempting to join quiz session for classId: ${classId}`);
         return this.gameService.joinQuizSession(classId, req.user.sub);
     }
 

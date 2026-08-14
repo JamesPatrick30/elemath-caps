@@ -1,4 +1,4 @@
-import { Injectable,NotFoundException } from '@nestjs/common';
+import { Injectable,NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { WebsocketService } from '../websocket/websocket.service';
@@ -13,7 +13,7 @@ import { SharedService } from '../shared/shared.service';
 @Injectable()
 export class GameService {
   constructor(
-    @InjectQueue(QueueNames.GenerateQuestions) private readonly generateQuestionsQueue: Queue,
+    @InjectQueue(QueueNames.AI) private readonly generateQuestionsQueue: Queue,
     private readonly prismaService: PrismaService,
     private readonly websocketService: WebsocketService,
     private readonly cacheService: CacheService,
@@ -32,20 +32,36 @@ export class GameService {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }
   
-  async generateQuestions(data: GenerateQuestionsRequest): Promise<{jj: null}> {
+  async generateQuestions(user: { id: string, email: string },lessonId: string , numberOfQuestions: number, type: 'multiple-choice' | 'true-false' | 'short-answer'): Promise<{message: string}> {
     // TODO: Add logic to generate questions based on the provided data
-    console.log('Adding GenerateQuestions job to the queue:', data);
+    console.log('Adding GenerateQuestions job to the queue:', { lessonId, numberOfQuestions, type });
 
-    setTimeout(() => {
-      console.log('Job added to the queue:', data);
-    }, 1000);
-    await this.generateQuestionsQueue.add('generate-questions', {content: data.content, numberOfQuestions: data.numberOfQuestions, type: data.type} as GenerateQuestionsRequest, {
+    const lessondata = await this.prismaService.client().lessons.findUnique({
+      where: { id: lessonId },
+      select: { 
+        id: true,
+        class: {
+          select:{
+            teacherId: true
+          }
+        }},
+    });
+
+    console.log('Lesson data retrieved:', lessondata);
+    if (!lessondata) {
+      throw new NotFoundException(`Lesson with ID ${lessonId} not found`);
+    }
+
+    if (lessondata.class.teacherId !== user.id) {
+      throw new UnauthorizedException(`User with ID ${user.email} is not authorized to generate questions for this lesson`);
+    }
+    void this.generateQuestionsQueue.add('generate-questions', {lessonId: lessonId, numberOfQuestions: numberOfQuestions, type: type} as GenerateQuestionsRequest, {
       attempts: 3,
       removeOnComplete: 100,
       removeOnFail: 100,
     });
 
-    return {jj: null};
+    return {message: "GenerateQuestions job has been added to the queue."};
   }
 
   async isQuizSessionExist(userId: string): Promise<boolean> {
@@ -80,6 +96,8 @@ export class GameService {
     this.cacheService.setGameData(checkKey, 'true', 3600); // Set expiration to 1 hour (3600 seconds)
     await this.cacheService.setGameData(key, JSON.stringify(sessionData), 3600); // Set expiration to 1 hour (3600 seconds)
     const roomKey = await this.sharedService.joinRoomKey(classId);
+
+    this.websocketService.teacherJoinRoom(roomKey);
     this.websocketService.emit(userId,{role: 'teacher' },roomKey);
 
     return { sessionId: classId, message: `Quiz session for class ID ${classId} has been created.` };
@@ -92,10 +110,7 @@ export class GameService {
     if (!sessionData) {
       throw new NotFoundException(`No active quiz session found for class ID ${classId}`);
     }
-    // console.log('sessionData:', sessionData);
-    // console.log('typeof sessionData:', typeof sessionData);
-    // console.log('sessionData.students:', sessionData);
-    // console.log('sessionData keys:', Object.keys(sessionData ?? {}));
+
     return sessionData;
   }
 
@@ -203,6 +218,7 @@ export class GameService {
 
     await this.cacheService.setGameData(sessionKey, JSON.stringify(sessionData));
     const roomKey = await this.sharedService.joinRoomKey(classId);
+    this.websocketService.joinRoom(userId, roomKey);
     this.websocketService.emit(SocketEvents.STUDENT_JOIN, { role: 'student', id: userId }, roomKey);
     return { message: `Successfully joined quiz session for class ID ${classId}` };
   }

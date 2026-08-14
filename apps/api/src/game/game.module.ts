@@ -11,6 +11,6 @@ import { SharedService } from '../shared/shared.service';
 @Module({
   controllers: [GameController],
   providers: [GameService, SharedService],
-  imports: [AuthModule, BullModule.registerQueue({name: QueueNames.GenerateQuestions}), PrismaModule, RedisModule, WebsocketModule]
+  imports: [AuthModule, BullModule.registerQueue({name: QueueNames.AI}), PrismaModule, RedisModule, WebsocketModule]
 })
 export class GameModule {}

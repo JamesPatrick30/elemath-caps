@@ -11,7 +11,7 @@ export class GenerateQuestionsProcessor extends WorkerHost {
 
   async process(job: Job): Promise<void> {
     console.log('Processing GenerateQuestions job:', job.data);
-    await this.game.generateQuestions(job.data as GenerateQuestionsRequest);
+    // await this.game.generateQuestions(job.data as GenerateQuestionsRequest);
 
     
   }

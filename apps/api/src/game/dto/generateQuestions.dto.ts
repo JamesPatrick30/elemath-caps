@@ -3,7 +3,7 @@ import { GenerateQuestionsRequest } from '@repo/types';
 
 export class GenerateQuestionsDto implements GenerateQuestionsRequest {
     @IsString()
-    content?: string | null;
+    lessonId!: string ;
 
     @IsNotEmpty()
     numberOfQuestions!: number;

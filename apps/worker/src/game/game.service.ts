@@ -13,14 +13,14 @@ export class GameService {
             baseURL: 'https://openrouter.ai/api/v1',
         });
     }
-    async generateQuestions(data: GenerateQuestionsRequest): Promise<void> {
+    // async generateQuestions(data: GenerateQuestionsRequest): Promise<void> {
 
-        const { content, numberOfQuestions, type } = data;
+    //     const { content, numberOfQuestions, type } = data;
 
-        const questions = await this.AiQuestionGenerator(content!, numberOfQuestions, type);
-        console.log('Generating questions with data:', data);
-        // Implement your logic to generate questions based on the provided data
-    }
+    //     const questions = await this.AiQuestionGenerator(content!, numberOfQuestions, type);
+    //     console.log('Generating questions with data:', data);
+    //     // Implement your logic to generate questions based on the provided data
+    // }
 
     async AiQuestionGenerator(
         content: string,
