@@ -28,7 +28,6 @@ export class TeacherService {
     const cacheKey = this.cacheKey(userId, 'profile');
     const cachedData = await this.cacheService.get<TeacherResponse>(cacheKey);
 
-    console.log('Cached data:', cachedData); // Log the cached data for debugging
 
     if (cachedData) {
       return cachedData;
