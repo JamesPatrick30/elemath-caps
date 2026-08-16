@@ -5,7 +5,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 
-import { OnModuleInit } from '@nestjs/common';
+import { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
 import { Server, Socket } from 'socket.io';
 
@@ -23,7 +23,7 @@ import { uploadTask } from '@repo/types';
     credentials: true,
   },
 })
-export class WebsocketGateway implements OnGatewayInit, OnModuleInit {
+export class WebsocketGateway implements OnGatewayInit, OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly websocketService: WebsocketService,
     private readonly jwtService: JwtService,
@@ -35,9 +35,9 @@ export class WebsocketGateway implements OnGatewayInit, OnModuleInit {
   @WebSocketServer()
   server!: Server;
 
-  onModuleInit() {
-    this.redisPubSubService.subscribe(pubsubEvents.FILE_UPLOAD, async (payload: uploadTask) => {
-      const  { status, id, isDone, userId } = payload;
+  private readonly socketUploadHandlers =async (payload: uploadTask): Promise<void> => {
+
+    const  { status, id, isDone, userId } = payload;
       console.log(`Publishing to socket ${id}:`, { status, isDone, userId });
       this.server.to(id).emit(SocketEvents.PDF_UPLOADED, {
         status,
@@ -49,17 +49,29 @@ export class WebsocketGateway implements OnGatewayInit, OnModuleInit {
 
         await this.cacheService.del(cacheKey);
       }
-    });
+  }
 
-    this.redisPubSubService.subscribe(pubsubEvents.SOCKET_EVENT, (payload: any) => {
-      const { event, payload: eventPayload, room } = payload;
-      if (room) {
+  private readonly socketEventHandlers = (payload: any): void => {
+    const { event, payload: eventPayload, room } = payload;
+
+    if (room) {
         this.server.to(room).emit(event, eventPayload);
       } else {
         this.server.emit(event, eventPayload);
       }
-    });
   }
+
+  onModuleInit() {
+    this.redisPubSubService.subscribe(pubsubEvents.FILE_UPLOAD, this.socketUploadHandlers);
+
+    this.redisPubSubService.subscribe(pubsubEvents.SOCKET_EVENT, this.socketEventHandlers);
+  }
+
+  onModuleDestroy() {
+    this.redisPubSubService.unsubscribe(pubsubEvents.FILE_UPLOAD, this.socketUploadHandlers);
+    this.redisPubSubService.unsubscribe(pubsubEvents.SOCKET_EVENT, this.socketEventHandlers);
+  }
+
   afterInit(server: Server) {
     this.websocketService.setServer(server);
 

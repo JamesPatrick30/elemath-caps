@@ -59,9 +59,9 @@ export class RedisPubSubService implements OnModuleDestroy {
     handlers.add(handler as PubSubHandler);
   }
 
-  async unsubscribe(
+  async unsubscribe<T>(
     channel: string,
-    handler: PubSubHandler,
+    handler: PubSubHandler<T>,
   ): Promise<void> {
     const handlers = this.handlers.get(channel);
 
@@ -69,7 +69,9 @@ export class RedisPubSubService implements OnModuleDestroy {
       return;
     }
 
-    handlers.delete(handler);
+    handlers.delete(
+      handler as PubSubHandler<unknown>,
+    );
 
     if (handlers.size === 0) {
       this.handlers.delete(channel);
