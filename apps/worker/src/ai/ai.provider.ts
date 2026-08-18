@@ -9,7 +9,7 @@ export class AiProcessor extends WorkerHost {
     super();
   }
 
-    async process(job: Job<generateQuestionsQueueData>): Promise<void> {
+    async process(job: Job<generateQuestionsQueueData>): Promise<{ message: string }> {
 
         console.log('Processing GenerateQuestions job:', job.data);
         return await this.aiService.generateQuestions(job.data);
