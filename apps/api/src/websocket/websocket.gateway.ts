@@ -16,7 +16,7 @@ import { SharedService } from '../shared/shared.service';
 import { SocketEvents } from '../types/socketEvents';
 import { UnauthorizedException } from '@nestjs/common';
 import { pubsubEvents } from '../types/pubsubEvents';
-import { uploadTask } from '@repo/types';
+import { uploadTask, PubSubSocketEvents } from '@repo/types';
 @WebSocketGateway({
   cors: {
     origin: 'http://localhost:5173',
@@ -51,7 +51,7 @@ export class WebsocketGateway implements OnGatewayInit, OnModuleInit, OnModuleDe
       }
   }
 
-  private readonly socketEventHandlers = (payload: any): void => {
+  private readonly socketEventHandlers = (payload: PubSubSocketEvents): void => {
     const { event, payload: eventPayload, room } = payload;
 
     if (room) {
@@ -157,19 +157,23 @@ export class WebsocketGateway implements OnGatewayInit, OnModuleInit, OnModuleDe
   @SubscribeMessage(SocketEvents.STUDENT_JOIN)
   async handleJoinRoom(socket: Socket, data: { roomId: string }) {
     const user = socket.data.user;
+    
+    if (!data) {
+      const classId = user.classId;
+      const roomKey = await this.sharedService.joinRoomKey(classId);
+
+      socket.join(roomKey);
+      return;
+    }
     const { roomId } = data;
 
     if (!user) {
+    
       console.error('User not authenticated');
       return;
     }
 
-    if (!roomId) {
-      const classId = user.classId;
-      const roomKey = await this.sharedService.joinRoomKey(classId);
-      socket.join(roomKey);
-      return;
-    }
+    
 
     const roomKey = await this.sharedService.joinRoomKey(roomId);
     socket.join(roomKey);
