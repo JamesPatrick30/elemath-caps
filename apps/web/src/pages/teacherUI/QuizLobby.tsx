@@ -4,6 +4,7 @@ import { getPdf, uploadPdf,getProcessingFiles } from "../../api/pdfApi";
 import { socket } from "../../socket/socket";
 import { SocketEvents } from "../../socket/socketEvents";
 import type { uploadTask } from "@repo/types";
+import StudentListLobbyTable from "../../components/game/StudentListLobbyTable";
 import { generateQuestions, getGameSession } from "../../api/gameApi";
 
 interface FileProcessedUpdate extends uploadTask {
@@ -151,6 +152,7 @@ export default function QuizLobby() {
         if (!questionType) return;
         try{
             await generateQuestions({
+                classId,
                 lessonId: selectedLesson.id,
                 numberOfQuestions,
                 type: questionType,
@@ -193,17 +195,45 @@ export default function QuizLobby() {
                 return { ...prevSession, students: updatedStudents };
             });
         });
+
+        socket.on(SocketEvents.QUIZ_STARTED, (data) => {
+            console.log("Quiz started:", data);
+            navigate(`/teacher/leaderboard/${classId}`);
+        });
+
+        socket.emit(SocketEvents.STUDENT_JOIN, { roomId: classId });
+
         return () => {
             socket.off(SocketEvents.PDF_UPLOADED);
             socket.off(SocketEvents.STUDENT_JOIN);
+            socket.off(SocketEvents.QUIZ_STARTED);
         }
     }, []);
+
+    const notchClip = (size = 8) =>
+    ({
+        clipPath: `polygon(0 ${size}px, ${size}px ${size}px, ${size}px 0, calc(100% - ${size}px) 0, calc(100% - ${size}px) ${size}px, 100% ${size}px, 100% calc(100% - ${size}px), calc(100% - ${size}px) calc(100% - ${size}px), calc(100% - ${size}px) 100%, ${size}px 100%, ${size}px calc(100% - ${size}px), 0 calc(100% - ${size}px))`,
+    } as const);
+
     return (
         <div className="h-screen w-full overflow-hidden bg-canopy-950 p-6 md:p-10 flex flex-col md:flex-row items-stretch justify-center gap-2.5">
             <div className="flex flex-col gap-3 w-full md:w-100 md:shrink-0 min-h-0">
-                <div className="border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(--colors-canopy-950)] flex flex-col gap-3 w-full">
-                    <h3 className="text-md font-bold text-white mb-4">Class ID: {classId}</h3>
-                    <p className="text-white">This is a simple lesson</p>
+                <div
+                    className="border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(--colors-canopy-950)] flex flex-col gap-3 w-full"
+                    style={notchClip(10)}
+                >
+                    <div className="flex items-center justify-between border-b-2 border-leaf-700 pb-3 mb-1">
+                        <h3 className="font-pixel text-xs text-sun-300 tracking-wide">
+                            Quiz Lobby
+                        </h3>
+                        <span className="font-pixel text-[9px] text-leaf-400 bg-canopy-950 px-2 py-1 border border-leaf-700">
+                            Lobby
+                        </span>
+                    </div>
+
+                    <p className="font-sans text-parchment-100">
+                        This is a simple lesson
+                    </p>
                 </div>
 
                 {/* Drag handlers now scoped to just this drop zone */}
@@ -329,21 +359,7 @@ export default function QuizLobby() {
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col min-h-0 border-4 border-canopy-800 bg-canopy-900 p-6 shadow-[6px_6px_0_theme(--colors-canopy-950)]">
-                <h2 className="text-2xl font-bold text-white mb-4">Students</h2>
-                <div className="flex-1 min-h-0 overflow-y-auto">
-                    <ul className="space-y-2">
-                        {session?.students?.map((student: any, _: number) => (
-                            <li key={_} className="bg-canopy-800 p-4 rounded text-white flex justify-between items-center">
-                                <p>{student.name}</p>
-                                <p className={`text-sm border rounded px-2 py-1 ${student.isInGame ? "bg-green-400" : "bg-grey-600"}`}>
-                                    
-                                    {student.isInGame ? "In Game" : "Not In Game"}</p>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
+            <StudentListLobbyTable students={session?.students ?? []} />
         </div>
     );
 }

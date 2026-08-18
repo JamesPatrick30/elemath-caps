@@ -125,7 +125,7 @@ const LoginChooser = ({
       <PixelButton
         variant="leaf"
         icon={<Gamepad2 className={big ? "w-6 h-6" : "w-4 h-4"} />}
-        className={big ? "!text-base !px-8 !py-5" : ""}
+        className={big ? "text-base! px-8! py-5!" : ""}
         onClick={() => navigate("/student/login")}
       >
         I'M A STUDENT
@@ -133,7 +133,7 @@ const LoginChooser = ({
       <PixelButton
         variant="gold"
         icon={<BookOpen className={big ? "w-6 h-6" : "w-4 h-4"} />}
-        className={big ? "!text-base !px-8 !py-5" : ""}
+        className={big ? "text-base! px-8! py-5!" : ""}
         onClick={() => navigate("/teacher/login")}
       >
         I'M A TEACHER
@@ -174,7 +174,7 @@ function Navbar() {
           <PixelButton
             variant="leaf"
             icon={<Gamepad2 className="w-4 h-4" />}
-            className="!px-4 !py-2 !text-[10px]"
+            className="px-4! py-2! text-[10px]!"
             onClick={() => navigate("/student/login")}
           >
             Student Login
@@ -182,7 +182,7 @@ function Navbar() {
           <PixelButton
             variant="gold"
             icon={<BookOpen className="w-4 h-4" />}
-            className="!px-4 !py-2 !text-[10px]"
+            className="px-4! py-2! text-[10px]!"
             onClick={() => navigate("/teacher/login")}
           >
             Teacher Login
@@ -209,7 +209,7 @@ function Navbar() {
             <PixelButton
               variant="leaf"
               icon={<Gamepad2 className="w-4 h-4" />}
-              className="!text-[10px] w-full justify-center"
+              className="text-[10px]! w-full justify-center"
               onClick={() => navigate("/student/login")}
             >
               Student Login
@@ -217,7 +217,7 @@ function Navbar() {
             <PixelButton
               variant="gold"
               icon={<BookOpen className="w-4 h-4" />}
-              className="!text-[10px] w-full justify-center"
+              className="text-[10px]! w-full justify-center"
               onClick={() => navigate("/teacher/login")}
             >
               Teacher Login
@@ -231,7 +231,7 @@ function Navbar() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#1a4d2e] via-[#123420] to-[#0d2818] border-b-[3px] border-black">
+    <section className="relative overflow-hidden bg-linear-b from-[#1a4d2e] via-[#123420] to-[#0d2818] border-b-[3px] border-black">
       {/* pixel cloud blocks */}
       <div className="absolute top-10 left-8 w-16 h-6 bg-[#dff2e1]/80 opacity-70" style={{ clipPath: "polygon(0 40%,20% 40%,20% 0,60% 0,60% 40%,100% 40%,100% 100%,0 100%)" }} />
       <div className="absolute top-24 right-16 w-20 h-7 bg-[#dff2e1]/60 opacity-60" style={{ clipPath: "polygon(0 40%,20% 40%,20% 0,60% 0,60% 40%,100% 40%,100% 100%,0 100%)" }} />
@@ -287,7 +287,7 @@ function Hero() {
               {["54", "56", "63", "48"].map((n, i) => (
                 <div
                   key={n}
-                  className={`font-silk text-[10px] text-center py-2 border-[2px] border-black ${
+                  className={`font-silk text-[10px] text-center py-2 border-2 border-black ${
                     i === 1 ? "bg-[#4fae4f] text-white" : "bg-white"
                   }`}
                 >
@@ -418,7 +418,7 @@ function JourneyPath() {
 
         {/* dotted trail */}
         <div
-          className="hidden md:block absolute left-0 right-0 top-[188px] h-1"
+          className="hidden md:block absolute left-0 right-0 top-47 h-1"
           style={{
             backgroundImage:
               "repeating-linear-gradient(to right, #f5c542 0 14px, transparent 14px 26px)",
@@ -435,7 +435,7 @@ function JourneyPath() {
                 {s.icon}
               </div>
               <MapPin className="w-4 h-4 text-[#f5c542] mt-2" />
-              <p className="font-silk text-[10px] text-[#dff2e1] mt-2 max-w-[140px] leading-relaxed">
+              <p className="font-silk text-[10px] text-[#dff2e1] mt-2 max-w-35 leading-relaxed">
                 {s.label}
               </p>
             </div>
@@ -531,7 +531,7 @@ function LeaderboardPreview() {
 
 function CTABanner() {
   return (
-    <section className="bg-gradient-to-b from-[#173a24] to-[#0a2015] py-20">
+    <section className="bg-linear-b from-[#173a24] to-[#0a2015] py-20">
       <div className="max-w-3xl mx-auto px-5 text-center">
         <PixelBadgeIcon bg="#f5c542">
           <Sparkles className="w-6 h-6 text-[#1b120a] mx-auto" />

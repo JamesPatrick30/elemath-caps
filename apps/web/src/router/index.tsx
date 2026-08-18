@@ -10,6 +10,8 @@ import QuizLobby from "../pages/teacherUI/QuizLobby";
 import StudentLogin from "../pages/auth/StudentLogin";
 import StudentDashboardPage from "../pages/studentUI/dashboardPage";
 import StudentQuizLobby from "../pages/studentUI/quizLobby";
+import LeaderBoard from "../pages/teacherUI/LeaderBoard";
+import QuizSession from "../pages/studentUI/QuizSession";
 export const router = createBrowserRouter([
     {
         element: <GuestRoute />,
@@ -44,6 +46,10 @@ export const router = createBrowserRouter([
             {
                 path: "/teacher/quiz-lobby/:classId",
                 element: <QuizLobby />,
+            },
+            {
+                path: "/teacher/leaderboard/:classId",
+                element: <LeaderBoard />,
             }
         ],
     },
@@ -60,6 +66,10 @@ export const router = createBrowserRouter([
                 path: "/student/quiz-lobby",
                 element: <StudentQuizLobby />,
             },
+            {
+                path: "/student/quiz-session",
+                element: <QuizSession />,
+            }
         ],
     },
 ]);

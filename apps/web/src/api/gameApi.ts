@@ -1,6 +1,6 @@
 import { api } from "./axios";
 import type { MessageResponse, StartSessionInput, QuizSessiondata } from "../types";
-import type { createQuizSessionResponse,GenerateQuestionsRequest, quizSession } from "@repo/types";
+import type { createQuizSessionResponse,GenerateQuestionsRequest, quizSession, GetQuizQuestionsResponse, LeaderboardResponse } from "@repo/types";
 // Base path confirmed: @Controller('game').
 
 // GameService.CreateQuizSession returns Promise<void> and the controller
@@ -22,9 +22,6 @@ export async function cancelQuizSession(classId: string) {
 }
 
 // Kicks off the live quiz — the backend takes over via sockets from here.
-export async function startQuizSession(classId: string) {
-  return api.post<MessageResponse>(`/game/start/${classId}`);
-}
 
 // Confirmed route, resolves void — no body to read. Not wired into any
 // UI yet (nothing requested a manual question editor).
@@ -43,16 +40,6 @@ export async function isQuizSessionExist() {
 
 export const generateQuestions = (payload: GenerateQuestionsRequest) => {
     return api.post("/game/generate/questions", payload);
-};
-
-export const addQuestion = async (payload: any) => {
-  try{
-    const response = await api.post("/game/questions/add", payload);
-    console.log("Question added successfully:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error adding question:", error);
-  }
 };
 
 export const joinQuizSession = async (classId: string) => {
@@ -74,3 +61,42 @@ export const getStudentsInSession = async (): Promise<quizSession['students']> =
     return [];
   }
 };
+
+export const getQuestion = async (): Promise<GetQuizQuestionsResponse | null> => {
+  try {
+    const response = await api.get(`/game/getQuestion`);
+    return response.data; // Assuming the API returns a question object
+  } catch (error) {
+    console.error("Error fetching question:", error);
+    return null;
+  }
+}
+
+export const submitAnswer = async (answer: string,questionId: string ) =>{
+  try {
+    const res = await api.post("/game/submit/answer",{answer,questionId});
+    return res.data;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export const leaderboard = async (classId: string): Promise<LeaderboardResponse> => {
+  try {
+    const response = await api.get(`/game/${classId}/leaderboard`);
+    return response.data; // Assuming the API returns a list of students with their scores
+  } catch (error) {
+    console.error("Error fetching leaderboard:", error);
+    return { leaderboard: [], isSessionDone: false };
+  }
+}
+
+export const saveQuizSession = async (classId: string): Promise<{message: string}> => {
+  try {
+    const response = await api.post(`/game/${classId}/save`);
+    return response.data; // Assuming the API returns a message confirming the save
+  } catch (error) {
+    console.error("Error saving quiz session:", error);
+    return { message: "Error saving quiz session" };
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"
 import type { quizSession } from "@repo/types";
 import { getStudentsInSession } from "../../api/gameApi";
 import { socket } from "../../socket/socket";
@@ -38,10 +39,12 @@ const SocketEvents: socketEvents = {
   QUIZ_STARTED: "quiz-started",
   QUIZ_ENDED: "quiz-ended",
   PDF_UPLOADED: "pdf-uploaded",
+  SUBMIT_ANSWER: "submit-answer"
 };
 export default function StudentQuizLobby() {
   const [now, setNow] = useState(Date.now());
 
+  const navigate = useNavigate();
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
@@ -55,10 +58,13 @@ export default function StudentQuizLobby() {
       handleGetStudents();
     });
 
+    socket.on(SocketEvents.QUIZ_STARTED, (data) => {
+            console.log("Quiz started:", data);
+            navigate(`/student/quiz-session`);
+      });
     socket.emit(SocketEvents.STUDENT_JOIN, { roomId: "quiz_room_123" });
     return () => {
       socket.off(SocketEvents.STUDENT_JOIN);
-      socket.disconnect();
     }
   }, []);
   const handleGetStudents = async () => {

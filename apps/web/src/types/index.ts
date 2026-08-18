@@ -180,3 +180,11 @@ export interface GenerateQuestionsInput {
   numberOfQuestions: number;
   type: QuestionType;
 }
+
+
+
+export interface Question {
+    id: string;
+    question: string;
+    options?: string[];
+}
